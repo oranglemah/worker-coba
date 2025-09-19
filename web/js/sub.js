@@ -1,559 +1,638 @@
+// worker.js — Full patch with CC filter & all /sub endpoints
+// Runs on Cloudflare Workers (no DOM). UI sederhana tersedia di /sub dan /web.
+
+/* ===================== CONFIG ===================== */
 const CONFIG = {
-  'proxyListUrl': "https://raw.githubusercontent.com/AFRcloud/ProxyList/refs/heads/main/ProxyList.txt",
-  'apiCheckUrl': "https://api.jb8fd7grgd.workers.dev/",
-  'mainDomains': ["dia.oranglemah.web.id"],
-  'defaultUuid': 'fccdaaae-af39-41a7-9fde-fd32a48278cf',
-  'maxProxies': 0x32,
-  'defaultProxyCount': 0x5,
-  'pathTemplate': "/Free/{ip}-{port}"
+  proxyListUrl: "https://raw.githubusercontent.com/AFRcloud/ProxyList/refs/heads/main/ProxyList.txt",
+  apiCheckUrl: "https://api.jb8fd7grgd.workers.dev/",
+  mainDomains: ["dia.oranglemah.web.id"],
+  defaultUuid: "fccdaaae-af39-41a7-9fde-fd32a48278cf",
+  maxProxies: 0x32,
+  defaultProxyCount: 0x5,
+  pathTemplate: "/Free/{ip}-{port}",
+  uiTitle: "AFRCloud Sub Generator"
 };
-let proxyList = [];
-let filteredProxyList = [];
-let validatedProxies = [];
-let validationInProgress = false;
-let totalValidated = 0x0;
-let validCount = 0x0;
-let invalidCount = 0x0;
-const form = document.getElementById("subLinkForm");
-const configTypeSelect = document.getElementById("configType");
-const formatTypeSelect = document.getElementById("formatType");
-const uuidInput = document.getElementById('uuid');
-const generateUuidBtn = document.getElementById('generateUuid');
-const bugTypeSelect = document.getElementById("bugType");
-const mainDomainSelect = document.getElementById('mainDomain');
-const customBugContainer = document.getElementById("customBugContainer");
-const customBugInput = document.getElementById("customBug");
-const tlsSelect = document.getElementById("tls");
-const countrySelect = document.getElementById("country");
-const limitInput = document.getElementById('limit');
-const validateProxiesCheckbox = document.getElementById("validateProxies");
-const loadingElement = document.getElementById("loading");
-const validationStatusElement = document.getElementById('validation-status');
-const validationCountElement = document.getElementById("validation-count");
-const validationBarElement = document.getElementById("validation-bar");
-const validCountElement = document.getElementById('valid-count');
-const invalidCountElement = document.getElementById("invalid-count");
-const errorMessageElement = document.getElementById("error-message");
-const resultElement = document.getElementById("result");
-const outputElement = document.getElementById("output");
-const copyLinkBtn = document.getElementById("copyLink");
-function generateUUIDv4() {
-  return crypto.randomUUID();
-}
-async function copyToClipboard(_0x3a1862) {
-  try {
-    await navigator.clipboard.writeText(_0x3a1862);
-    return true;
-  } catch (_0x53b1ea) {
-    console.error("Failed to copy: ", _0x53b1ea);
-    return false;
+
+/* ===================== Boot ===================== */
+addEventListener("fetch", event => event.respondWith(handleRequest(event.request)));
+
+/* ===================== ISO2 Map (CC Helper) ===================== */
+const ISO2_MAP = {
+  ID: "Indonesia", SG: "Singapore", MY: "Malaysia", TH: "Thailand", VN: "Vietnam",
+  PH: "Philippines", JP: "Japan", KR: "Korea", HK: "Hong Kong", TW: "Taiwan",
+  CN: "China", IN: "India", AU: "Australia", NZ: "New Zealand",
+  US: "United States", CA: "Canada", MX: "Mexico",
+  GB: "United Kingdom", UK: "United Kingdom", DE: "Germany", NL: "Netherlands",
+  FR: "France", ES: "Spain", IT: "Italy", TR: "Turkey", RU: "Russia",
+  AE: "United Arab Emirates", SA: "Saudi Arabia"
+};
+
+/* ===================== Utils ===================== */
+function normalizeCC(ccRaw) {
+  if (!ccRaw) return "";
+  const cc = ccRaw.trim();
+  if (cc.length === 2) {
+    const iso = cc.toUpperCase();
+    return ISO2_MAP[iso] || iso; // if not in map, keep code
   }
+  return cc;
 }
-function safeBase64Encode(_0x38f716) {
-  try {
-    return btoa(unescape(encodeURIComponent(_0x38f716)));
-  } catch (_0x84a36b) {
-    console.error("Error encoding base64:", _0x84a36b);
-    return '';
+function matchCountry(recordCountry, wanted) {
+  if (!wanted) return true;
+  const rc = (recordCountry || "").toLowerCase();
+  const w  = wanted.toLowerCase();
+  return rc === w || rc.includes(`(${w})`) || rc.startsWith(w) || rc.includes(` ${w} `) || rc.endsWith(` ${w}`);
+}
+function clampLimit(n, min = 1, max = CONFIG.maxProxies) {
+  const num = Number.isFinite(n) ? n : CONFIG.defaultProxyCount;
+  return Math.min(Math.max(num, min), max);
+}
+function pickRandom(list, n) {
+  const arr = list.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
+  return arr.slice(0, n);
 }
-document.addEventListener("DOMContentLoaded", () => {
-  populateMainDomains();
-  setupEventListeners();
-  loadProxyList();
-});
-function populateMainDomains() {
-  CONFIG.mainDomains.forEach(_0x40b88c => {
-    const _0x111831 = document.createElement("option");
-    _0x111831.value = _0x40b88c;
-    _0x111831.textContent = _0x40b88c;
-    mainDomainSelect.appendChild(_0x111831);
-  });
+function safeBase64Encode(str) {
+  try { return btoa(unescape(encodeURIComponent(str))); } catch { return ""; }
 }
-function setupEventListeners() {
-  generateUuidBtn.addEventListener("click", () => {
-    uuidInput.value = crypto.randomUUID();
-  });
-  bugTypeSelect.addEventListener("change", () => {
-    if (bugTypeSelect.value === 'non-wildcard' || bugTypeSelect.value === "wildcard") {
-      customBugContainer.style.display = 'block';
-    } else {
-      customBugContainer.style.display = "none";
-    }
-  });
-  form.addEventListener("submit", handleFormSubmit);
-  copyLinkBtn.addEventListener("click", () => {
-    copyToClipboard(outputElement.value).then(_0xbf9f12 => {
-      if (_0xbf9f12) {
-        copyLinkBtn.innerHTML = "\n            <svg class=\"copy-icon\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\n              <polyline points=\"20 6 9 17 4 12\"></polyline>\n            </svg>\n            COPIED SUCCESSFULLY\n          ";
-        setTimeout(() => {
-          copyLinkBtn.innerHTML = "\n              <svg class=\"copy-icon\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\n                <rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\" ry=\"2\"></rect>\n                <path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path>\n              </svg>\n              COPY CONFIGURATION\n            ";
-        }, 0x7d0);
+function uenc(s) { return encodeURIComponent(s); }
+
+async function fetchProxyListText(url) {
+  const r = await fetch(url, { cf: { cacheTtl: 300, cacheEverything: true } });
+  if (!r.ok) throw new Error(`Proxy list fetch failed ${r.status}`);
+  return await r.text();
+}
+function parseProxyListText(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
+  if (lines.length === 0) return [];
+  let delim = ",";
+  const first = lines[0];
+  if (first.includes("\t")) delim = "\t";
+  else if (first.includes("|")) delim = "|";
+  else if (first.includes(";")) delim = ";";
+  return lines.map(l => {
+    const p = l.split(delim);
+    if (p.length < 2) return null;
+    return {
+      ip: p[0].trim(),
+      port: p[1].trim(),
+      country: p.length >= 3 ? p[2].trim() : "Unknown",
+      provider: p.length >= 4 ? p[3].trim() : "Unknown Provider"
+    };
+  }).filter(Boolean);
+}
+async function getFilteredProxiesByCC(cc, limit) {
+  const raw = await fetchProxyListText(CONFIG.proxyListUrl);
+  const all = parseProxyListText(raw);
+  const wanted = normalizeCC(cc);
+  const filtered = wanted ? all.filter(p => matchCountry(p.country, wanted)) : all;
+  const final = pickRandom(filtered.length ? filtered : all, clampLimit(limit));
+  return final;
+}
+
+/* ===================== Generators ===================== */
+// V2Ray/VMess/VLESS/Trojan/SS link builder
+function generateV2rayLinks(protocol, proxyList, uuid, bugType, mainDomain, customBugs, tls) {
+  const out = [];
+  let bugHosts = [];
+  if (customBugs && (bugType === "non-wildcard" || bugType === "wildcard")) {
+    bugHosts = customBugs.split(",").map(s => s.trim()).filter(Boolean);
+  }
+
+  for (const rec of proxyList) {
+    const path = CONFIG.pathTemplate.replace("{ip}", rec.ip).replace("{port}", rec.port);
+    const port = tls ? 443 : 80;
+    const sec = tls ? "tls" : "none";
+    const nameBase = `${rec.country} - ${rec.provider}`;
+
+    const genForHost = (hostRoot, hostHeader, sniHost) => {
+      if (protocol === "mix" || protocol === "vmess") {
+        const vmess = {
+          v: "2", ps: `[${out.length + 1}] ${nameBase} [VMess-${tls ? "TLS" : "NTLS"}]`,
+          add: hostRoot, port, id: uuid, aid: "0", net: "ws", type: "none",
+          host: hostHeader, path, tls: sec, sni: sniHost, scy: "zero"
+        };
+        out.push("vmess://" + safeBase64Encode(JSON.stringify(vmess)));
       }
-    });
-  });
-}
-function loadProxyList() {
-  showLoading("Fetching proxy list...");
-  fetch("https://raw.githubusercontent.com/AFRcloud/ProxyList/refs/heads/main/ProxyList.txt").then(_0x4494de => {
-    if (!_0x4494de.ok) {
-      throw new Error("Failed to fetch proxy list");
-    }
-    return _0x4494de.text();
-  }).then(_0x139194 => {
-    processProxyData(_0x139194);
-    hideLoading();
-  })["catch"](_0x34db10 => {
-    console.error("Error loading proxy list:", _0x34db10);
-    showError("Failed to load proxy list. Please try again later.");
-    hideLoading();
-  });
-}
-function processProxyData(_0x33f045) {
-  const _0x4d6091 = _0x33f045.split(/\r?\n/).filter(_0xf68f4f => _0xf68f4f.trim() !== '');
-  if (_0x4d6091.length === 0x0) {
-    showError("No proxies found in the proxy list.");
-    return;
-  }
-  let _0x3777ca = ',';
-  const _0x1899eb = _0x4d6091[0x0];
-  if (_0x1899eb.includes("\t")) {
-    _0x3777ca = "\t";
-  } else {
-    if (_0x1899eb.includes('|')) {
-      _0x3777ca = '|';
-    } else if (_0x1899eb.includes(';')) {
-      _0x3777ca = ';';
+      if (protocol === "mix" || protocol === "vless") {
+        const tag = uenc(`[${out.length + 1}] ${nameBase} [VLESS-${tls ? "TLS" : "NTLS"}]`);
+        out.push(`vless://${uuid}@${hostRoot}:${port}?encryption=none&security=${sec}&type=ws&host=${hostHeader}&path=${uenc(path)}&sni=${sniHost}#${tag}`);
+      }
+      if (protocol === "mix" || protocol === "trojan") {
+        const tag = uenc(`[${out.length + 1}] ${nameBase} [Trojan-${tls ? "TLS" : "NTLS"}]`);
+        out.push(`trojan://${uuid}@${hostRoot}:${port}?security=${sec}&type=ws&host=${hostHeader}&path=${uenc(path)}&sni=${sniHost}#${tag}`);
+      }
+      if (protocol === "mix" || protocol === "shadowsocks") {
+        const tag = uenc(`[${out.length + 1}] ${nameBase} [SS-${tls ? "TLS" : "NTLS"}]`);
+        const auth = safeBase64Encode(`none:${uuid}`);
+        out.push(`ss://${auth}@${hostRoot}:${port}?plugin=v2ray-plugin%3Btls%3Bmode%3Dwebsocket%3Bpath%3D${uenc(path)}%3Bhost%3D${hostHeader}#${tag}`);
+      }
+    };
+
+    if (bugHosts.length > 0) {
+      for (const h of bugHosts) {
+        const isWildcard = bugType === "wildcard";
+        const hostRoot = h;
+        const hostHeader = isWildcard ? `${h}.${mainDomain}` : mainDomain;
+        const sniHost = hostHeader;
+        genForHost(hostRoot, hostHeader, sniHost);
+      }
+    } else {
+      genForHost(mainDomain, mainDomain, mainDomain);
     }
   }
-  proxyList = _0x4d6091.map(_0x94f33 => {
-    const _0x2dfee1 = _0x94f33.split(_0x3777ca);
-    if (_0x2dfee1.length >= 0x2) {
+
+  return out.join("\n");
+}
+
+// Clash YAML
+function generateClashConfig(protocol, proxyList, uuid, bugType, mainDomain, customBugs, tls) {
+  let yaml = `# Clash Proxy Provider Configuration
+# Generated by AFRCloud
+# Date: ${new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" })}
+# Protocol: ${protocol.toUpperCase()}
+# TLS: ${tls ? "Enabled" : "Disabled"}
+
+proxies:
+`;
+  let bugHosts = [];
+  if (customBugs && (bugType === "non-wildcard" || bugType === "wildcard")) {
+    bugHosts = customBugs.split(",").map(s => s.trim()).filter(Boolean);
+  }
+
+  for (const rec of proxyList) {
+    const path = CONFIG.pathTemplate.replace("{ip}", rec.ip).replace("{port}", rec.port);
+    const port = tls ? 443 : 80;
+
+    const pushVmess = (server, hostHeader, sni) => {
+      if (protocol === "mix" || protocol === "vmess") {
+        const name = `[${proxyList.indexOf(rec) + 1}] ${rec.country} - ${rec.provider} [VMess-${tls ? "TLS" : "NTLS"}]`;
+        yaml += `
+  - name: "${name}"
+    type: vmess
+    server: ${server}
+    port: ${port}
+    uuid: ${uuid}
+    alterId: 0
+    cipher: zero
+    udp: false
+    tls: ${tls}
+    skip-cert-verify: true
+    servername: ${sni}
+    network: ws
+    ws-opts:
+      path: ${path}
+      headers:
+        Host: ${hostHeader}
+`;
+      }
+    };
+
+    const pushVless = (server, hostHeader, sni) => {
+      if (protocol === "mix" || protocol === "vless") {
+        const name = `[${proxyList.indexOf(rec) + 1}] ${rec.country} - ${rec.provider} [VLESS-${tls ? "TLS" : "NTLS"}]`;
+        yaml += `
+  - name: "${name}"
+    type: vless
+    server: ${server}
+    port: ${port}
+    uuid: ${uuid}
+    udp: false
+    tls: ${tls}
+    skip-cert-verify: true
+    servername: ${sni}
+    network: ws
+    ws-opts:
+      path: ${path}
+      headers:
+        Host: ${hostHeader}
+`;
+      }
+    };
+
+    const pushTrojan = (server, hostHeader, sni) => {
+      if (protocol === "mix" || protocol === "trojan") {
+        const name = `[${proxyList.indexOf(rec) + 1}] ${rec.country} - ${rec.provider} [Trojan-${tls ? "TLS" : "NTLS"}]`;
+        yaml += `
+  - name: "${name}"
+    type: trojan
+    server: ${server}
+    port: ${port}
+    password: ${uuid}
+    udp: false
+    sni: ${sni}
+    skip-cert-verify: true
+    network: ws
+    ws-opts:
+      path: ${path}
+      headers:
+        Host: ${hostHeader}
+`;
+      }
+    };
+
+    const pushSS = (server, hostHeader) => {
+      if (protocol === "mix" || protocol === "shadowsocks") {
+        const name = `[${proxyList.indexOf(rec) + 1}] ${rec.country} - ${rec.provider} [SS-${tls ? "TLS" : "NTLS"}]`;
+        yaml += `
+  - name: "${name}"
+    type: ss
+    server: ${server}
+    port: ${port}
+    cipher: none
+    password: ${uuid}
+    udp: false
+    plugin: v2ray-plugin
+    plugin-opts:
+      mode: websocket
+      tls: ${tls}
+      skip-cert-verify: true
+      host: ${hostHeader}
+      path: ${path}
+      mux: false
+`;
+      }
+    };
+
+    const emitFor = (server, hostHeader, sni) => {
+      pushVmess(server, hostHeader, sni);
+      pushVless(server, hostHeader, sni);
+      pushTrojan(server, hostHeader, sni);
+      pushSS(server, hostHeader);
+    };
+
+    if (bugHosts.length > 0) {
+      for (const h of bugHosts) {
+        const isWildcard = bugType === "wildcard";
+        const server = h;
+        const hostHeader = isWildcard ? `${h}.${mainDomain}` : mainDomain;
+        const sni = hostHeader;
+        emitFor(server, hostHeader, sni);
+      }
+    } else {
+      emitFor(mainDomain, mainDomain, mainDomain);
+    }
+  }
+
+  yaml += `
+# (Minimal) extra outbounds to keep config valid if imported as full config
+# You can paste this into a Provider file or full config as needed.
+`;
+  return yaml;
+}
+
+// Nekobox JSON (nodes array expected)
+function generateNekoboxConfig(nodes) {
+  // Untuk kesederhanaan, kita buat Internet selector + urltest + daftar nodes
+  const nodeJson = nodes.map(n => {
+    if (n.type === "vmess") {
       return {
-        'ip': _0x2dfee1[0x0].trim(),
-        'port': _0x2dfee1[0x1].trim(),
-        'country': _0x2dfee1.length >= 0x3 ? _0x2dfee1[0x2].trim() : 'Unknown',
-        'provider': _0x2dfee1.length >= 0x4 ? _0x2dfee1[0x3].trim() : "Unknown Provider"
+        alter_id: 0, packet_encoding: "", security: "zero",
+        server: n.server, server_port: n.port,
+        ...(n.tls ? { tls: { enabled: true, insecure: false, server_name: n.sni || n.server, utls: { enabled: true, fingerprint: "randomized" } } } : {}),
+        transport: { headers: { Host: n.wsHost || n.server }, path: n.wsPath, type: "ws" },
+        uuid: n.uuid, type: "vmess", domain_strategy: "prefer_ipv4", tag: n.name
+      };
+    } else if (n.type === "vless") {
+      return {
+        domain_strategy: "ipv4_only", flow: "", multiplex: { enabled: false, max_streams: 32, protocol: "smux" },
+        packet_encoding: "xudp", server: n.server, server_port: n.port, tag: n.name,
+        ...(n.tls ? { tls: { enabled: true, insecure: false, server_name: n.sni || n.server, utls: { enabled: true, fingerprint: "randomized" } } } : {}),
+        transport: { early_data_header_name: "Sec-WebSocket-Protocol", headers: { Host: n.wsHost || n.server }, max_early_data: 0, path: n.wsPath, type: "ws" },
+        type: "vless", uuid: n.uuid
+      };
+    } else if (n.type === "trojan") {
+      return {
+        domain_strategy: "ipv4_only", multiplex: { enabled: false, max_streams: 32, protocol: "smux" },
+        password: n.password, server: n.server, server_port: n.port, tag: n.name,
+        ...(n.tls ? { tls: { enabled: true, insecure: false, server_name: n.sni || n.server, utls: { enabled: true, fingerprint: "randomized" } } } : {}),
+        transport: { early_data_header_name: "Sec-WebSocket-Protocol", headers: { Host: n.wsHost || n.server }, max_early_data: 0, path: n.wsPath, type: "ws" },
+        type: "trojan"
+      };
+    } else { // ss
+      return {
+        type: "shadowsocks", tag: n.name, server: n.server, server_port: n.port,
+        method: "none", password: n.password,
+        plugin: "v2ray-plugin",
+        plugin_opts: `mux=0;path=${n.wsPath};host=${n.wsHost || n.server};tls=${n.tls ? "1" : "0"}`
       };
     }
-    return null;
-  }).filter(_0xdf2f5b => _0xdf2f5b && _0xdf2f5b.ip && _0xdf2f5b.port);
-  populateCountryDropdown();
-}
-function populateCountryDropdown() {
-  const _0x3712f3 = [...new Set(proxyList.map(_0x3cdc85 => _0x3cdc85.country))];
-  _0x3712f3.sort();
-  countrySelect.innerHTML = '';
-  const _0x47db50 = document.createElement("option");
-  _0x47db50.value = '';
-  _0x47db50.textContent = "All Countries";
-  countrySelect.appendChild(_0x47db50);
-  _0x3712f3.forEach(_0x547d71 => {
-    const _0x1f50f5 = document.createElement("option");
-    _0x1f50f5.value = _0x547d71;
-    _0x1f50f5.textContent = _0x547d71;
-    countrySelect.appendChild(_0x1f50f5);
   });
+
+  const skeleton = {
+    dns: {
+      final: "dns-final", independent_cache: true,
+      rules: [{ disable_cache: false, domain: ["family.cloudflare-dns.com"], server: "direct-dns" }],
+      servers: [
+        { address: "https://family.cloudflare-dns.com/dns-query", address_resolver: "direct-dns", strategy: "ipv4_only", tag: "remote-dns" },
+        { address: "local", strategy: "ipv4_only", tag: "direct-dns" },
+        { address: "local", address_resolver: "dns-local", strategy: "ipv4_only", tag: "dns-final" },
+        { address: "local", tag: "dns-local" },
+        { address: "rcode://success", tag: "dns-block" }
+      ]
+    },
+    experimental: {
+      cache_file: { enabled: true, path: "../cache/clash.db", store_fakeip: true },
+      clash_api: { external_controller: "127.0.0.1:9090", external_ui: "../files/yacd" }
+    },
+    inbounds: [
+      { listen: "0.0.0.0", listen_port: 6450, override_address: "8.8.8.8", override_port: 53, tag: "dns-in", type: "direct" },
+      { domain_strategy: "", endpoint_independent_nat: true, inet4_address: ["172.19.0.1/28"], mtu: 9000, sniff: true, sniff_override_destination: true, stack: "system", tag: "tun-in", type: "tun" },
+      { domain_strategy: "", listen: "0.0.0.0", listen_port: 2080, sniff: true, sniff_override_destination: true, tag: "mixed-in", type: "mixed" }
+    ],
+    log: { level: "info" },
+    outbounds: [
+      { outbounds: ["Best Latency", ...nodes.map(n => n.name), "direct"], tag: "Internet", type: "selector" },
+      { interval: "1m0s", outbounds: [...nodes.map(n => n.name), "direct"], tag: "Best Latency", type: "urltest", url: "https://detectportal.firefox.com/success.txt" },
+      ...nodeJson,
+      { tag: "direct", type: "direct" },
+      { tag: "bypass", type: "direct" },
+      { tag: "block", type: "block" },
+      { tag: "dns-out", type: "dns" }
+    ],
+    route: {
+      auto_detect_interface: true,
+      rules: [
+        { outbound: "dns-out", port: [53] },
+        { inbound: ["dns-in"], outbound: "dns-out" },
+        { network: ["udp"], outbound: "block", port: [443], port_range: [] },
+        { ip_cidr: ["224.0.0.0/3", "ff00::/8"], outbound: "block", source_ip_cidr: ["224.0.0.0/3", "ff00::/8"] }
+      ]
+    }
+  };
+  return "##Free##\n" + JSON.stringify(skeleton, null, 2);
 }
-async function handleFormSubmit(_0x242808) {
-  _0x242808.preventDefault();
-  errorMessageElement.textContent = '';
-  errorMessageElement.style.display = "none";
-  const _0x110b63 = configTypeSelect.value;
-  const _0x1e06b0 = formatTypeSelect.value;
-  const _0x521cbd = uuidInput.value;
-  const _0x46bcd6 = bugTypeSelect.value;
-  const _0x178670 = mainDomainSelect.value;
-  const _0x1a54a2 = customBugInput.value;
-  const _0x287a93 = tlsSelect.value === "true";
-  const _0x2b7f20 = countrySelect.value;
-  const _0x2365d1 = Number.parseInt(limitInput.value, 0xa);
-  const _0x287a10 = validateProxiesCheckbox.checked;
-  if (!_0x521cbd) {
-    showError("Please enter a UUID.");
-    return;
-  }
-  if (_0x2365d1 < 0x1 || _0x2365d1 > 0x32) {
-    showError("Proxy count must be between 1 and 50.");
-    return;
-  }
-  filteredProxyList = _0x2b7f20 ? proxyList.filter(_0x4b2ae4 => _0x4b2ae4.country === _0x2b7f20) : [...proxyList];
-  if (filteredProxyList.length === 0x0) {
-    showError("No proxies found with the selected criteria.");
-    return;
-  }
-  shuffleArray(filteredProxyList);
-  filteredProxyList = filteredProxyList.slice(0x0, _0x2365d1);
-  showLoading("Generating configuration...");
-  if (_0x287a10) {
-    await validateProxyList();
-  }
-  const _0x17bc8e = generateConfiguration(_0x110b63, _0x1e06b0, _0x521cbd, _0x46bcd6, _0x178670, _0x1a54a2, _0x287a93);
-  showResult(_0x17bc8e);
+
+/* ===================== Sub Wrappers (use CC filter) ===================== */
+async function generateClashSub(type, bugs, bexnxx, tls, cc, limit) {
+  const list = await getFilteredProxiesByCC(cc, limit);
+  return generateClashConfig(type, list, CONFIG.defaultUuid, bugs ? (bexnxx !== CONFIG.mainDomains[0] ? "non-wildcard" : "default") : "default", bexnxx, null, tls);
 }
-async function validateProxyList() {
-  validationInProgress = true;
-  validatedProxies = [];
-  totalValidated = 0x0;
-  validCount = 0x0;
-  invalidCount = 0x0;
-  validationStatusElement.style.display = "block";
-  validationCountElement.textContent = '0/' + filteredProxyList.length;
-  validationBarElement.style.width = '0%';
-  validCountElement.textContent = '0';
-  invalidCountElement.textContent = '0';
-  invalidCountElement.textContent = '0';
-  const _0x4332ef = [...filteredProxyList];
-  const _0x5b3e38 = Math.ceil(_0x4332ef.length / 0x5);
-  for (let _0x16a2da = 0x0; _0x16a2da < _0x5b3e38; _0x16a2da++) {
-    const _0x3a46c6 = _0x16a2da * 0x5;
-    const _0x3e4450 = Math.min(_0x3a46c6 + 0x5, _0x4332ef.length);
-    const _0xc8c08d = _0x4332ef.slice(_0x3a46c6, _0x3e4450);
-    await Promise.all(_0xc8c08d.map(async _0x5ec896 => {
-      const _0x592a51 = await validateProxy(_0x5ec896);
-      totalValidated++;
-      const _0x22ea5a = totalValidated / _0x4332ef.length * 0x64;
-      validationCountElement.textContent = totalValidated + '/' + _0x4332ef.length;
-      validationBarElement.style.width = _0x22ea5a + '%';
-      if (_0x592a51) {
-        validCount++;
-        validCountElement.textContent = validCount;
-        validatedProxies.push(_0x5ec896);
-      } else {
-        invalidCount++;
-        invalidCountElement.textContent = invalidCount;
-      }
-    }));
-  }
-  if (validatedProxies.length > 0x0) {
-    filteredProxyList = validatedProxies;
-  }
-  validationInProgress = false;
+async function generateV2raySub(type, bugs, bexnxx, tls, cc, limit) {
+  const list = await getFilteredProxiesByCC(cc, limit);
+  return generateV2rayLinks(type, list, CONFIG.defaultUuid, bugs ? (bexnxx !== CONFIG.mainDomains[0] ? "non-wildcard" : "default") : "default", bexnxx, null, tls);
 }
-async function validateProxy(_0x40e0b1) {
-  try {
-    const _0x5084c5 = await fetch("https://afrcloud.dpdns.org/" + _0x40e0b1.ip + ':' + _0x40e0b1.port);
-    const _0x17509d = await _0x5084c5.json();
-    const _0x416052 = Array.isArray(_0x17509d) ? _0x17509d[0x0] : _0x17509d;
-    return _0x416052 && _0x416052.proxyip === true;
-  } catch (_0x1dc00e) {
-    console.error("Error validating proxy:", _0x1dc00e);
-    return false;
-  }
+async function generateV2rayngSub(type, bugs, bexnxx, tls, cc, limit) {
+  return generateV2raySub(type, bugs, bexnxx, tls, cc, limit);
 }
-function generateConfiguration(_0x1f0a31, _0x142717, _0x559e83, _0x2af67c, _0x2a84fa, _0x306f9c, _0x2a8e81) {
-  const _0x26af7a = filteredProxyList;
-  switch (_0x142717) {
-    case "v2ray":
-      return generateV2rayLinks(_0x1f0a31, _0x26af7a, _0x559e83, _0x2af67c, _0x2a84fa, _0x306f9c, _0x2a8e81);
-    case 'clash':
-      return generateClashConfig(_0x1f0a31, _0x26af7a, _0x559e83, _0x2af67c, _0x2a84fa, _0x306f9c, _0x2a8e81);
-    case "nekobox":
-      const _0x325b5f = [];
-      _0x26af7a.forEach(_0x2f8b2a => {
-        const _0x2a6cad = "/Free/{ip}-{port}".replace("{ip}", _0x2f8b2a.ip).replace("{port}", _0x2f8b2a.port);
-        const _0x5796b5 = _0x2a8e81 ? 0x1bb : 0x50;
-        const _0x10ed8d = _0x306f9c && (_0x2af67c === "non-wildcard" || _0x2af67c === "wildcard") ? _0x306f9c.split(',').map(_0x2065e6 => _0x2065e6.trim()) : [_0x2a84fa];
-        _0x10ed8d.forEach(_0x56a273 => {
-          let _0xa1b4c1;
-          let _0x928f74;
-          let _0xe50fa4;
-          switch (_0x2af67c) {
-            case "default":
-              _0xa1b4c1 = _0x2a84fa;
-              _0x928f74 = _0x2a84fa;
-              _0xe50fa4 = _0x2a84fa;
-              break;
-            case "non-wildcard":
-              _0xa1b4c1 = _0x56a273;
-              _0x928f74 = _0x2a84fa;
-              _0xe50fa4 = _0x2a84fa;
-              break;
-            case 'wildcard':
-              _0xa1b4c1 = _0x56a273;
-              _0x928f74 = _0x56a273 + '.' + _0x2a84fa;
-              _0xe50fa4 = _0x56a273 + '.' + _0x2a84fa;
-              break;
-          }
-          const _0x587ec3 = _0x2f8b2a.country;
-          const _0x8c3a20 = _0x2f8b2a.provider;
-          if (_0x1f0a31 === 'vmess' || _0x1f0a31 === "mix") {
-            _0x325b5f.push({
-              'type': "vmess",
-              'name': '[' + (_0x325b5f.length + 0x1) + "] (" + _0x587ec3 + ") " + _0x8c3a20 + " [VMESS-" + (_0x2a8e81 ? "TLS" : 'NTLS') + ']',
-              'server': _0xa1b4c1,
-              'port': _0x5796b5,
-              'uuid': _0x559e83,
-              'tls': _0x2a8e81,
-              'sni': _0xe50fa4,
-              'wsHost': _0x928f74,
-              'wsPath': _0x2a6cad
-            });
-          }
-          if (_0x1f0a31 === "vless" || _0x1f0a31 === "mix") {
-            _0x325b5f.push({
-              'type': "vless",
-              'name': '[' + (_0x325b5f.length + 0x1) + "] (" + _0x587ec3 + ") " + _0x8c3a20 + " [VLESS-" + (_0x2a8e81 ? "TLS" : "NTLS") + ']',
-              'server': _0xa1b4c1,
-              'port': _0x5796b5,
-              'uuid': _0x559e83,
-              'tls': _0x2a8e81,
-              'sni': _0xe50fa4,
-              'wsHost': _0x928f74,
-              'wsPath': _0x2a6cad
-            });
-          }
-          if (_0x1f0a31 === "trojan" || _0x1f0a31 === "mix") {
-            _0x325b5f.push({
-              'type': "trojan",
-              'name': '[' + (_0x325b5f.length + 0x1) + "] (" + _0x587ec3 + ") " + _0x8c3a20 + " [TROJAN-" + (_0x2a8e81 ? "TLS" : "NTLS") + ']',
-              'server': _0xa1b4c1,
-              'port': _0x5796b5,
-              'password': _0x559e83,
-              'tls': _0x2a8e81,
-              'sni': _0xe50fa4,
-              'wsHost': _0x928f74,
-              'wsPath': _0x2a6cad
-            });
-          }
-          if (_0x1f0a31 === "shadowsocks" || _0x1f0a31 === "mix") {
-            _0x325b5f.push({
-              'type': 'ss',
-              'name': '[' + (_0x325b5f.length + 0x1) + "] (" + _0x587ec3 + ") " + _0x8c3a20 + " [SS-" + (_0x2a8e81 ? "TLS" : 'NTLS') + ']',
-              'server': _0xa1b4c1,
-              'port': _0x5796b5,
-              'password': _0x559e83,
-              'tls': _0x2a8e81,
-              'wsHost': _0x928f74,
-              'wsPath': _0x2a6cad
-            });
-          }
-        });
-      });
-      return generateNekoboxConfig(_0x325b5f);
+async function generateSingboxSub(type, bugs, bexnxx, tls, cc, limit) {
+  // Kalau ada generator khusus Sing-box, panggil di sini.
+  // Sementara fallback ke V2Ray links agar tetap ada output.
+  return generateV2raySub(type, bugs, bexnxx, tls, cc, limit);
+}
+async function generateSurfboardSub(type, bugs, bexnxx, tls, cc, limit) {
+  // Fallback
+  return generateV2raySub(type, bugs, bexnxx, tls, cc, limit);
+}
+async function generateHusiSub(type, bugs, bexnxx, tls, cc, limit) {
+  // Fallback
+  return generateV2raySub(type, bugs, bexnxx, tls, cc, limit);
+}
+async function generateNekoboxSub(type, bugs, bexnxx, tls, cc, limit) {
+  const list = await getFilteredProxiesByCC(cc, limit);
+  // Bangun nodes singkat mengikuti aturan "nekobox" di kode Anda sebelumnya
+  const nodes = [];
+  for (const rec of list) {
+    const path = CONFIG.pathTemplate.replace("{ip}", rec.ip).replace("{port}", rec.port);
+    const port = tls ? 443 : 80;
+    const pick = (t) => ({
+      type: t,
+      name: `[${nodes.length + 1}] (${rec.country}) ${rec.provider} [${t.toUpperCase()}-${tls ? "TLS" : "NTLS"}]`,
+      server: bexnxx,
+      port,
+      uuid: CONFIG.defaultUuid,
+      password: CONFIG.defaultUuid,
+      tls,
+      sni: bexnxx,
+      wsHost: bexnxx,
+      wsPath: path
+    });
+    if (type === "vmess" || type === "mix") nodes.push(pick("vmess"));
+    if (type === "vless" || type === "mix") nodes.push(pick("vless"));
+    if (type === "trojan" || type === "mix") nodes.push(pick("trojan"));
+    if (type === "shadowsocks" || type === "mix") nodes.push(pick("ss"));
+  }
+  return generateNekoboxConfig(nodes);
+}
+
+/* ===================== HTTP Handlers ===================== */
+async function handleRequest(request) {
+  const url = new URL(request.url);
+
+  // (Opsional) direct ip:port extraction mode (dari body/path). Placeholder:
+  // Bila sebelumnya Anda punya ipPortMatch dari body/path, proses di sini.
+  const ipPortMatch = null; // tidak aktif secara default
+  if (ipPortMatch) {
+    const proxyIP = ipPortMatch[1].replace(/[=:-]/, ":"); // ip:port
+    console.log(`Direct Proxy IP: ${proxyIP}`);
+    return new Response("Direct WS handler belum diaktifkan pada build ini.", { status: 501 });
+  }
+
+  const bexx = url.hostname;
+  const type = url.searchParams.get("type") || "mix";
+  const tls = url.searchParams.get("tls") !== "false";
+  const wildcard = url.searchParams.get("wildcard") === "true";
+  const bugs = url.searchParams.get("bug") || bexx;
+  const bexnxx = wildcard ? `${bugs}.${bexx}` : bexx;
+
+  // NEW: dukung cc atau country
+  const ccParam = url.searchParams.get("cc") || url.searchParams.get("country") || "";
+  // NEW: limit aman
+  const limit = clampLimit(parseInt(url.searchParams.get("limit"), 10));
+
+  let configs;
+
+  switch (url.pathname) {
+    case "/sub/clash":
+      configs = await generateClashSub(type, bugs, bexnxx, tls, ccParam, limit);
+      return txt(configs);
+    case "/sub/surfboard":
+      configs = await generateSurfboardSub(type, bugs, bexnxx, tls, ccParam, limit);
+      return txt(configs);
+    case "/sub/singbox":
+      configs = await generateSingboxSub(type, bugs, bexnxx, tls, ccParam, limit);
+      return txt(configs);
+    case "/sub/husi":
+      configs = await generateHusiSub(type, bugs, bexnxx, tls, ccParam, limit);
+      return txt(configs);
+    case "/sub/nekobox":
+      configs = await generateNekoboxSub(type, bugs, bexnxx, tls, ccParam, limit);
+      return txt(configs);
+    case "/sub/v2rayng":
+      configs = await generateV2rayngSub(type, bugs, bexnxx, tls, ccParam, limit);
+      return txt(configs);
+    case "/sub/v2ray":
+      configs = await generateV2raySub(type, bugs, bexnxx, tls, ccParam, limit);
+      return txt(configs);
+    case "/sub":
+      return html(await renderSubUI(bexx));
+    case "/web":
+      return html(await renderLanding(bexx));
     default:
-      return "Unsupported format type";
+      // Reverse proxy sederhana (example.com) — bisa diubah
+      const targetReverseProxy = "example.com";
+      return await reverseProxy(request, targetReverseProxy);
   }
 }
-function generateV2rayLinks(_0x4ae1c6, _0x4b8e74, _0x29ed29, _0x229483, _0x40705a, _0x529635, _0x2014a9) {
-  const _0x307e59 = [];
-  let _0x225dcd = [];
-  if (_0x529635 && (_0x229483 === "non-wildcard" || _0x229483 === 'wildcard')) {
-    _0x225dcd = _0x529635.split(',').map(_0x300d17 => _0x300d17.trim());
+
+/* ===================== Minimal UI ===================== */
+async function renderSubUI(hostname) {
+  const mainDomainOptions = CONFIG.mainDomains.map(d => `<option value="${d}">${d}</option>`).join("");
+  return `<!doctype html>
+<html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>${CONFIG.uiTitle}</title>
+<style>
+  body{font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;background:#0f172a;color:#e2e8f0;margin:0;padding:24px}
+  .card{max-width:920px;margin:0 auto;background:#111827;border:1px solid #1f2937;border-radius:16px;padding:20px}
+  label{display:block;margin:.5rem 0 .25rem;color:#cbd5e1}
+  input,select{width:100%;padding:.6rem .7rem;border-radius:10px;background:#0b1220;border:1px solid #1e293b;color:#e2e8f0;outline:none}
+  .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .btn{background:#2563eb;border:none;padding:.7rem 1rem;border-radius:10px;color:#fff;cursor:pointer;margin-top:12px}
+  textarea{width:100%;height:260px;background:#0b1220;border:1px solid #1e293b;color:#e2e8f0;border-radius:10px;padding:12px}
+  .muted{color:#94a3b8;font-size:.9rem}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h2 style="margin:0 0 12px">${CONFIG.uiTitle}</h2>
+    <p class="muted">Hostname Anda: <strong>${hostname}</strong></p>
+
+    <div class="row">
+      <div>
+        <label>Type</label>
+        <select id="type">
+          <option value="mix">mix</option>
+          <option value="vmess">vmess</option>
+          <option value="vless">vless</option>
+          <option value="trojan">trojan</option>
+          <option value="shadowsocks">shadowsocks</option>
+        </select>
+      </div>
+      <div>
+        <label>TLS</label>
+        <select id="tls">
+          <option value="true">true</option>
+          <option value="false">false</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Bug (host)</label>
+        <input id="bug" placeholder="cdn, or wildcard label"/>
+      </div>
+      <div>
+        <label>Main Domain</label>
+        <select id="mainDomain">${mainDomainOptions}</select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Wildcard</label>
+        <select id="wildcard">
+          <option value="false">false</option>
+          <option value="true">true</option>
+        </select>
+      </div>
+      <div>
+        <label>CC / Country</label>
+        <input id="cc" placeholder="ID / SG / Indonesia / Singapore"/>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Limit</label>
+        <input id="limit" type="number" min="1" max="${CONFIG.maxProxies}" value="${CONFIG.defaultProxyCount}"/>
+      </div>
+      <div>
+        <label>Format</label>
+        <select id="fmt">
+          <option value="clash">/sub/clash</option>
+          <option value="v2ray">/sub/v2ray</option>
+          <option value="v2rayng">/sub/v2rayng</option>
+          <option value="nekobox">/sub/nekobox</option>
+          <option value="singbox">/sub/singbox</option>
+          <option value="surfboard">/sub/surfboard</option>
+          <option value="husi">/sub/husi</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn" id="gen">Generate</button>
+    <p class="muted">Hasil:</p>
+    <textarea id="out" readonly></textarea>
+  </div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  $("gen").onclick = async () => {
+    const fmt = $("fmt").value;
+    const type = $("type").value;
+    const tls = $("tls").value;
+    const bug = $("bug").value.trim();
+    const mainDomain = $("mainDomain").value;
+    const wildcard = $("wildcard").value;
+    const cc = $("cc").value.trim();
+    const limit = $("limit").value;
+
+    const host = location.host;
+    const ep = \`/\${fmt}?type=\${encodeURIComponent(type)}&tls=\${encodeURIComponent(tls)}&bug=\${encodeURIComponent(bug || mainDomain)}&wildcard=\${encodeURIComponent(wildcard)}&cc=\${encodeURIComponent(cc)}&limit=\${encodeURIComponent(limit)}\`;
+    const url = location.protocol + "//" + host + ep;
+    const r = await fetch(url);
+    $("out").value = await r.text();
+  };
+</script>
+</body></html>`;
+}
+
+async function renderLanding(hostname) {
+  return `<!doctype html>
+<html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>${CONFIG.uiTitle}</title></head>
+<body style="font-family:system-ui;display:grid;place-items:center;height:100vh;background:#0f172a;color:#e2e8f0">
+  <div style="max-width:720px;background:#111827;padding:24px;border-radius:16px;border:1px solid #1f2937">
+    <h1 style="margin-top:0">${CONFIG.uiTitle}</h1>
+    <p>Gunakan <code>/sub</code> untuk UI generator, atau panggil endpoint langsung:</p>
+    <pre style="white-space:pre-wrap;background:#0b1220;padding:12px;border-radius:10px;border:1px solid #1e293b">
+https://${hostname}/sub/clash?type=mix&tls=true&wildcard=true&bug=cdn&cc=ID&limit=10
+https://${hostname}/sub/v2ray?type=vless&cc=Singapore&limit=5
+    </pre>
+    <p style="color:#94a3b8">Hostname Anda: <strong>${hostname}</strong></p>
+  </div>
+</body></html>`;
+}
+
+/* ===================== Reverse Proxy (simple) ===================== */
+async function reverseProxy(req, targetHost) {
+  try {
+    const url = new URL(req.url);
+    const target = new URL(url.pathname + url.search, `https://${targetHost}`);
+    const init = {
+      method: req.method,
+      headers: new Headers(req.headers),
+      redirect: "follow"
+    };
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      init.body = req.body;
+    }
+    // Adjust Host header
+    init.headers.set("Host", target.host);
+    return await fetch(target, init);
+  } catch (e) {
+    return new Response("Reverse proxy error: " + (e && e.message), { status: 502 });
   }
-  _0x4b8e74.forEach(_0x29873d => {
-    const _0xf9d8cf = "/Free/{ip}-{port}".replace("{ip}", _0x29873d.ip).replace('{port}', _0x29873d.port);
-    const _0x197458 = _0x2014a9 ? 0x1bb : 0x50;
-    const _0x56327b = _0x2014a9 ? "tls" : 'none';
-    if (_0x4ae1c6 === "mix" || _0x4ae1c6 === 'vmess') {
-      if (_0x225dcd.length > 0x0) {
-        _0x225dcd.forEach((_0x2da4e8, _0x417d68) => {
-          const _0x1f2cbd = _0x229483 === 'wildcard' ? _0x2da4e8 + '.' + _0x40705a : _0x40705a;
-          const _0x2cf9bf = _0x229483 === "wildcard" ? _0x2da4e8 + '.' + _0x40705a : _0x40705a;
-          const _0x3785bd = {
-            'v': '2',
-            'ps': '[' + (_0x307e59.length + 0x1) + "] " + _0x29873d.country + " - " + _0x29873d.provider + " [VMess-" + (_0x2014a9 ? "TLS" : "NTLS") + ']',
-            'add': _0x2da4e8,
-            'port': _0x197458,
-            'id': _0x29ed29,
-            'aid': '0',
-            'net': 'ws',
-            'type': "none",
-            'host': _0x1f2cbd,
-            'path': _0xf9d8cf,
-            'tls': _0x56327b,
-            'sni': _0x2cf9bf,
-            'scy': "zero"
-          };
-          _0x307e59.push("vmess://" + safeBase64Encode(JSON.stringify(_0x3785bd)));
-        });
-      } else {
-        const _0x914513 = {
-          'v': '2',
-          'ps': '[' + (_0x307e59.length + 0x1) + "] " + _0x29873d.country + " - " + _0x29873d.provider + " [VMess-" + (_0x2014a9 ? "TLS" : "NTLS") + ']',
-          'add': _0x40705a,
-          'port': _0x197458,
-          'id': _0x29ed29,
-          'aid': '0',
-          'net': 'ws',
-          'type': "none",
-          'host': _0x40705a,
-          'path': _0xf9d8cf,
-          'tls': _0x56327b,
-          'sni': _0x40705a,
-          'scy': "zero"
-        };
-        _0x307e59.push('vmess://' + safeBase64Encode(JSON.stringify(_0x914513)));
-      }
-    }
-    if (_0x4ae1c6 === 'mix' || _0x4ae1c6 === 'vless') {
-      if (_0x225dcd.length > 0x0) {
-        _0x225dcd.forEach(_0xf1564c => {
-          const _0x491272 = _0x229483 === "wildcard" ? _0xf1564c + '.' + _0x40705a : _0x40705a;
-          const _0x43542e = _0x229483 === 'wildcard' ? _0xf1564c + '.' + _0x40705a : _0x40705a;
-          const _0x8e9d4e = encodeURIComponent('[' + (_0x307e59.length + 0x1) + "] " + _0x29873d.country + " - " + _0x29873d.provider + " [VLESS-" + (_0x2014a9 ? 'TLS' : "NTLS") + ']');
-          const _0x52d677 = encodeURIComponent(_0xf9d8cf);
-          _0x307e59.push("vless://" + _0x29ed29 + '@' + _0xf1564c + ':' + _0x197458 + "?encryption=none&security=" + _0x56327b + "&type=ws&host=" + _0x491272 + "&path=" + _0x52d677 + '&sni=' + _0x43542e + '#' + _0x8e9d4e);
-        });
-      } else {
-        const _0x48c1bc = encodeURIComponent('[' + (_0x307e59.length + 0x1) + "] " + _0x29873d.country + " - " + _0x29873d.provider + " [VLESS-" + (_0x2014a9 ? "TLS" : "NTLS") + ']');
-        const _0x1b67b9 = encodeURIComponent(_0xf9d8cf);
-        _0x307e59.push('vless://' + _0x29ed29 + '@' + _0x40705a + ':' + _0x197458 + '?encryption=none&security=' + _0x56327b + '&type=ws&host=' + _0x40705a + "&path=" + _0x1b67b9 + "&sni=" + _0x40705a + '#' + _0x48c1bc);
-      }
-    }
-    if (_0x4ae1c6 === "mix" || _0x4ae1c6 === "trojan") {
-      if (_0x225dcd.length > 0x0) {
-        _0x225dcd.forEach(_0x2f8766 => {
-          const _0x53f2e4 = _0x229483 === 'wildcard' ? _0x2f8766 + '.' + _0x40705a : _0x40705a;
-          const _0xcf00c9 = _0x229483 === "wildcard" ? _0x2f8766 + '.' + _0x40705a : _0x40705a;
-          const _0x57accd = encodeURIComponent('[' + (_0x307e59.length + 0x1) + "] " + _0x29873d.country + " - " + _0x29873d.provider + " [Trojan-" + (_0x2014a9 ? 'TLS' : 'NTLS') + ']');
-          const _0x38d016 = encodeURIComponent(_0xf9d8cf);
-          _0x307e59.push("trojan://" + _0x29ed29 + '@' + _0x2f8766 + ':' + _0x197458 + "?security=" + _0x56327b + "&type=ws&host=" + _0x53f2e4 + "&path=" + _0x38d016 + "&sni=" + _0xcf00c9 + '#' + _0x57accd);
-        });
-      } else {
-        const _0x977f74 = encodeURIComponent('[' + (_0x307e59.length + 0x1) + "] " + _0x29873d.country + " - " + _0x29873d.provider + " [Trojan-" + (_0x2014a9 ? "TLS" : 'NTLS') + ']');
-        const _0x163df0 = encodeURIComponent(_0xf9d8cf);
-        _0x307e59.push('trojan://' + _0x29ed29 + '@' + _0x40705a + ':' + _0x197458 + '?security=' + _0x56327b + "&type=ws&host=" + _0x40705a + "&path=" + _0x163df0 + "&sni=" + _0x40705a + '#' + _0x977f74);
-      }
-    }
-    if (_0x4ae1c6 === "mix" || _0x4ae1c6 === "shadowsocks") {
-      if (_0x225dcd.length > 0x0) {
-        _0x225dcd.forEach(_0x1bb2ea => {
-          const _0xbfdd0f = _0x229483 === 'wildcard' ? _0x1bb2ea + '.' + _0x40705a : _0x40705a;
-          const _0x2151e0 = encodeURIComponent('[' + (_0x307e59.length + 0x1) + "] " + _0x29873d.country + " - " + _0x29873d.provider + " [SS-" + (_0x2014a9 ? "TLS" : "NTLS") + ']');
-          const _0xe88bb = encodeURIComponent(_0xf9d8cf);
-          const _0x170849 = safeBase64Encode("none:" + _0x29ed29);
-          _0x307e59.push("ss://" + _0x170849 + '@' + _0x1bb2ea + ':' + _0x197458 + "?plugin=v2ray-plugin%3Btls%3Bmux%3D0%3Bmode%3Dwebsocket%3Bpath%3D" + _0xe88bb + '%3Bhost%3D' + _0xbfdd0f + '#' + _0x2151e0);
-        });
-      } else {
-        const _0x1ccb47 = encodeURIComponent('[' + (_0x307e59.length + 0x1) + "] " + _0x29873d.country + " - " + _0x29873d.provider + " [SS-" + (_0x2014a9 ? 'TLS' : "NTLS") + ']');
-        const _0x122687 = encodeURIComponent(_0xf9d8cf);
-        const _0x34b2b4 = safeBase64Encode("none:" + _0x29ed29);
-        _0x307e59.push('ss://' + _0x34b2b4 + '@' + _0x40705a + ':' + _0x197458 + "?plugin=v2ray-plugin%3Btls%3Bmux%3D0%3Bmode%3Dwebsocket%3Bpath=" + _0x122687 + '%3Bhost%3D' + _0x40705a + '#' + _0x1ccb47);
-      }
-    }
-  });
-  return _0x307e59.join("\n");
 }
-function generateClashConfig(_0x1786a5, _0x29feac, _0x5e4410, _0x2cde90, _0x2020a9, _0xdfe797, _0x20d327) {
-  let _0x8df0ee = "# Clash Proxy Provider Configuration\n# Generated by afrcloud\n# Date: " + new Date().toLocaleString('en-US', {
-    'timeZone': "Asia/Jakarta"
-  }) + "\n# Protocol: " + _0x1786a5.toUpperCase() + "\n# TLS: " + (_0x20d327 ? "Enabled" : "Disabled") + "\n\nproxies:\n";
-  let _0x67ac19 = [];
-  if (_0xdfe797 && (_0x2cde90 === "non-wildcard" || _0x2cde90 === "wildcard")) {
-    _0x67ac19 = _0xdfe797.split(',').map(_0x457eae => _0x457eae.trim());
-  }
-  _0x29feac.forEach(_0x468e1e => {
-    const _0x3401f7 = "/Free/{ip}-{port}".replace('{ip}', _0x468e1e.ip).replace('{port}', _0x468e1e.port);
-    const _0x5a3f41 = _0x20d327 ? 0x1bb : 0x50;
-    if (_0x1786a5 === "mix" || _0x1786a5 === 'vmess') {
-      if (_0x67ac19.length > 0x0) {
-        _0x67ac19.forEach((_0x332f38, _0x4668c4) => {
-          const _0x5309ac = _0x2cde90 === "wildcard" ? _0x332f38 + '.' + _0x2020a9 : _0x2020a9;
-          const _0x37865b = _0x2cde90 === "wildcard" ? _0x332f38 + '.' + _0x2020a9 : _0x2020a9;
-          const _0x1cc031 = '[' + (_0x29feac.indexOf(_0x468e1e) * _0x67ac19.length + _0x4668c4 + 0x1) + "] " + _0x468e1e.country + " - " + _0x468e1e.provider + " [VMess-" + (_0x20d327 ? "TLS" : "NTLS") + ']';
-          _0x8df0ee += "\n  - name: \"" + _0x1cc031 + "\"\n    type: vmess\n    server: " + _0x332f38 + "\n    port: " + _0x5a3f41 + "\n    uuid: " + _0x5e4410 + "\n    alterId: 0\n    cipher: zero\n    udp: false\n    tls: " + _0x20d327 + "\n    skip-cert-verify: true\n    servername: " + _0x37865b + "\n    network: ws\n    ws-opts:\n      path: " + _0x3401f7 + "\n      headers:\n        Host: " + _0x5309ac + "\n";
-        });
-      } else {
-        const _0x30709c = '[' + (_0x29feac.indexOf(_0x468e1e) + 0x1) + "] " + _0x468e1e.country + " - " + _0x468e1e.provider + " [VMess-" + (_0x20d327 ? "TLS" : "NTLS") + ']';
-        _0x8df0ee += "\n  - name: \"" + _0x30709c + "\"\n    type: vmess\n    server: " + _0x2020a9 + "\n    port: " + _0x5a3f41 + "\n    uuid: " + _0x5e4410 + "\n    alterId: 0\n    cipher: zero\n    udp: false\n    tls: " + _0x20d327 + "\n    skip-cert-verify: true\n    servername: " + _0x2020a9 + "\n    network: ws\n    ws-opts:\n      path: " + _0x3401f7 + "\n      headers:\n        Host: " + _0x2020a9 + "\n";
-      }
-    }
-    if (_0x1786a5 === "mix" || _0x1786a5 === 'vless') {
-      if (_0x67ac19.length > 0x0) {
-        _0x67ac19.forEach((_0x33d5b0, _0x9c795d) => {
-          const _0x47f58f = _0x2cde90 === "wildcard" ? _0x33d5b0 + '.' + _0x2020a9 : _0x2020a9;
-          const _0x3795c0 = _0x2cde90 === "wildcard" ? _0x33d5b0 + '.' + _0x2020a9 : _0x2020a9;
-          const _0x40df10 = '[' + (_0x29feac.indexOf(_0x468e1e) * _0x67ac19.length + _0x9c795d + 0x1) + "] " + _0x468e1e.country + " - " + _0x468e1e.provider + " [VLESS-" + (_0x20d327 ? "TLS" : "NTLS") + ']';
-          _0x8df0ee += "\n  - name: \"" + _0x40df10 + "\"\n    type: vless\n    server: " + _0x33d5b0 + "\n    port: " + _0x5a3f41 + "\n    uuid: " + _0x5e4410 + "\n    udp: false\n    tls: " + _0x20d327 + "\n    skip-cert-verify: true\n    servername: " + _0x3795c0 + "\n    network: ws\n    ws-opts:\n      path: " + _0x3401f7 + "\n      headers:\n        Host: " + _0x47f58f + "\n";
-        });
-      } else {
-        const _0x364eb7 = '[' + (_0x29feac.indexOf(_0x468e1e) + 0x1) + "] " + _0x468e1e.country + " - " + _0x468e1e.provider + " [VLESS-" + (_0x20d327 ? "TLS" : "NTLS") + ']';
-        _0x8df0ee += "\n  - name: \"" + _0x364eb7 + "\"\n    type: vless\n    server: " + _0x2020a9 + "\n    port: " + _0x5a3f41 + "\n    uuid: " + _0x5e4410 + "\n    udp: false\n    tls: " + _0x20d327 + "\n    skip-cert-verify: true\n    servername: " + _0x2020a9 + "\n    network: ws\n    ws-opts:\n      path: " + _0x3401f7 + "\n      headers:\n        Host: " + _0x2020a9 + "\n";
-      }
-    }
-    if (_0x1786a5 === "mix" || _0x1786a5 === "trojan") {
-      if (_0x67ac19.length > 0x0) {
-        _0x67ac19.forEach((_0x5d5169, _0x1454cf) => {
-          const _0x1a90ac = _0x2cde90 === "wildcard" ? _0x5d5169 + '.' + _0x2020a9 : _0x2020a9;
-          const _0x201e92 = _0x2cde90 === "wildcard" ? _0x5d5169 + '.' + _0x2020a9 : _0x2020a9;
-          const _0x125b9e = '[' + (_0x29feac.indexOf(_0x468e1e) * _0x67ac19.length + _0x1454cf + 0x1) + "] " + _0x468e1e.country + " - " + _0x468e1e.provider + " [Trojan-" + (_0x20d327 ? "TLS" : "NTLS") + ']';
-          _0x8df0ee += "\n  - name: \"" + _0x125b9e + "\"\n    type: trojan\n    server: " + _0x5d5169 + "\n    port: " + _0x5a3f41 + "\n    password: " + _0x5e4410 + "\n    udp: false\n    sni: " + _0x201e92 + "\n    skip-cert-verify: true\n    network: ws\n    ws-opts:\n      path: " + _0x3401f7 + "\n      headers:\n        Host: " + _0x1a90ac + "\n";
-        });
-      } else {
-        const _0xbcdf4 = '[' + (_0x29feac.indexOf(_0x468e1e) + 0x1) + "] " + _0x468e1e.country + " - " + _0x468e1e.provider + " [Trojan-" + (_0x20d327 ? 'TLS' : "NTLS") + ']';
-        _0x8df0ee += "\n  - name: \"" + _0xbcdf4 + "\"\n    type: trojan\n    server: " + _0x2020a9 + "\n    port: " + _0x5a3f41 + "\n    password: " + _0x5e4410 + "\n    udp: false\n    sni: " + _0x2020a9 + "\n    skip-cert-verify: true\n    network: ws\n    ws-opts:\n      path: " + _0x3401f7 + "\n      headers:\n        Host: " + _0x2020a9 + "\n";
-      }
-    }
-    if (_0x1786a5 === 'mix' || _0x1786a5 === "shadowsocks") {
-      if (_0x67ac19.length > 0x0) {
-        _0x67ac19.forEach((_0x3c3645, _0x247523) => {
-          const _0x53eb18 = _0x2cde90 === "wildcard" ? _0x3c3645 + '.' + _0x2020a9 : _0x2020a9;
-          const _0x907f67 = '[' + (_0x29feac.indexOf(_0x468e1e) * _0x67ac19.length + _0x247523 + 0x1) + "] " + _0x468e1e.country + " - " + _0x468e1e.provider + " [SS-" + (_0x20d327 ? "TLS" : "NTLS") + ']';
-          _0x8df0ee += "\n  - name: \"" + _0x907f67 + "\"\n    type: ss\n    server: " + _0x3c3645 + "\n    port: " + _0x5a3f41 + "\n    cipher: none\n    password: " + _0x5e4410 + "\n    udp: false\n    plugin: v2ray-plugin\n    plugin-opts:\n      mode: websocket\n      tls: " + _0x20d327 + "\n      skip-cert-verify: true\n      host: " + _0x53eb18 + "\n      path: " + _0x3401f7 + "\n      mux: false\n";
-        });
-      } else {
-        const _0x5e7f61 = '[' + (_0x29feac.indexOf(_0x468e1e) + 0x1) + "] " + _0x468e1e.country + " - " + _0x468e1e.provider + " [SS-" + (_0x20d327 ? "TLS" : "NTLS") + ']';
-        _0x8df0ee += "\n  - name: \"" + _0x5e7f61 + "\"\n    type: ss\n    server: " + _0x2020a9 + "\n    port: " + _0x5a3f41 + "\n    cipher: none\n    password: " + _0x5e4410 + "\n    udp: false\n    plugin: v2ray-plugin\n    plugin-opts:\n      mode: websocket\n      tls: " + _0x20d327 + "\n      skip-cert-verify: true\n      host: " + _0x2020a9 + "\n      path: " + _0x3401f7 + "\n      mux: false\n";
-      }
-    }
-  });
-  return _0x8df0ee;
+
+/* ===================== Small helpers ===================== */
+function txt(body) {
+  return new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
 }
-function generateNekoboxConfig(_0x1c508f) {
-  let _0x1885d1 = "##Free##\n{\n  \"dns\": {\n    \"final\": \"dns-final\",\n    \"independent_cache\": true,\n    \"rules\": [\n      {\n        \"disable_cache\": false,\n        \"domain\": [\n          \"family.cloudflare-dns.com\"\n        ],\n        \"server\": \"direct-dns\"\n      }\n    ],\n    \"servers\": [\n      {\n        \"address\": \"https://family.cloudflare-dns.com/dns-query\",\n        \"address_resolver\": \"direct-dns\",\n        \"strategy\": \"ipv4_only\",\n        \"tag\": \"remote-dns\"\n      },\n      {\n        \"address\": \"local\",\n        \"strategy\": \"ipv4_only\",\n        \"tag\": \"direct-dns\"\n      },\n      {\n        \"address\": \"local\",\n        \"address_resolver\": \"dns-local\",\n        \"strategy\": \"ipv4_only\",\n        \"tag\": \"dns-final\"\n      },\n      {\n        \"address\": \"local\",\n        \"tag\": \"dns-local\"\n      },\n      {\n        \"address\": \"rcode://success\",\n        \"tag\": \"dns-block\"\n      }\n    ]\n  },\n  \"experimental\": {\n    \"cache_file\": {\n      \"enabled\": true,\n      \"path\": \"../cache/clash.db\",\n      \"store_fakeip\": true\n    },\n    \"clash_api\": {\n      \"external_controller\": \"127.0.0.1:9090\",\n      \"external_ui\": \"../files/yacd\"\n    }\n  },\n  \"inbounds\": [\n    {\n      \"listen\": \"0.0.0.0\",\n      \"listen_port\": 6450,\n      \"override_address\": \"8.8.8.8\",\n      \"override_port\": 53,\n      \"tag\": \"dns-in\",\n      \"type\": \"direct\"\n    },\n    {\n      \"domain_strategy\": \"\",\n      \"endpoint_independent_nat\": true,\n      \"inet4_address\": [\n        \"172.19.0.1/28\"\n      ],\n      \"mtu\": 9000,\n      \"endpoint_independent_nat\": true,\n      \"inet4_address\": [\n        \"172.19.0.1/28\"\n      ],\n      \"mtu\": 9000,\n      \"sniff\": true,\n      \"sniff_override_destination\": true,\n      \"stack\": \"system\",\n      \"tag\": \"tun-in\",\n      \"type\": \"tun\"\n    },\n    {\n      \"domain_strategy\": \"\",\n      \"listen\": \"0.0.0.0\",\n      \"listen_port\": 2080,\n      \"sniff\": true,\n      \"sniff_override_destination\": true,\n      \"tag\": \"mixed-in\",\n      \"type\": \"mixed\"\n    }\n  ],\n  \"log\": {\n    \"level\": \"info\"\n  },\n  \"outbounds\": [\n    {\n      \"outbounds\": [\n        \"Best Latency\",\n";
-  const _0x213c2d = _0x1c508f.map(_0x3becaf => "        \"" + _0x3becaf.name + "\",").join("\n");
-  _0x1885d1 += _0x213c2d + "\n";
-  _0x1885d1 += "        \"direct\"\n      ],\n      \"tag\": \"Internet\",\n      \"type\": \"selector\"\n    },\n    {\n      \"interval\": \"1m0s\",\n      \"outbounds\": [\n";
-  _0x1885d1 += _0x213c2d + "\n";
-  _0x1885d1 += "        \"direct\"\n      ],\n      \"tag\": \"Best Latency\",\n      \"type\": \"urltest\",\n      \"url\": \"https://detectportal.firefox.com/success.txt\"\n    },\n";
-  const _0x2d2048 = _0x1c508f.map((_0x1c8082, _0x2c7019) => {
-    let _0x565893 = '';
-    if (_0x1c8082.type === "vmess") {
-      _0x565893 = "    {\n      \"alter_id\": 0,\n      \"packet_encoding\": \"\",\n      \"security\": \"zero\",\n      \"server\": \"" + _0x1c8082.server + "\",\n      \"server_port\": " + _0x1c8082.port + ',' + (_0x1c8082.tls ? "\n      \"tls\": {\n        \"enabled\": true,\n        \"insecure\": false,\n        \"server_name\": \"" + (_0x1c8082.sni || _0x1c8082.server) + "\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"randomized\"\n        }\n      }," : '') + "\n      \"transport\": {\n        \"headers\": {\n          \"Host\": \"" + (_0x1c8082.wsHost || _0x1c8082.server) + "\"\n        },\n        \"path\": \"" + _0x1c8082.wsPath + "\",\n        \"type\": \"ws\"\n      },\n      \"uuid\": \"" + _0x1c8082.uuid + "\",\n      \"type\": \"vmess\",\n      \"domain_strategy\": \"prefer_ipv4\",\n      \"tag\": \"" + _0x1c8082.name + "\"\n    }";
-    } else {
-      if (_0x1c8082.type === "vless") {
-        _0x565893 = "    {\n      \"domain_strategy\": \"ipv4_only\",\n      \"flow\": \"\",\n      \"multiplex\": {\n        \"enabled\": false,\n        \"max_streams\": 32,\n        \"protocol\": \"smux\"\n      },\n      \"packet_encoding\": \"xudp\",\n      \"server\": \"" + _0x1c8082.server + "\",\n      \"server_port\": " + _0x1c8082.port + ",\n      \"tag\": \"" + _0x1c8082.name + "\"," + (_0x1c8082.tls ? "\n      \"tls\": {\n        \"enabled\": true,\n        \"insecure\": false,\n        \"server_name\": \"" + (_0x1c8082.sni || _0x1c8082.server) + "\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"randomized\"\n        }\n      }," : '') + "\n      \"transport\": {\n        \"early_data_header_name\": \"Sec-WebSocket-Protocol\",\n        \"headers\": {\n          \"Host\": \"" + (_0x1c8082.wsHost || _0x1c8082.server) + "\"\n        },\n        \"max_early_data\": 0,\n        \"path\": \"" + _0x1c8082.wsPath + "\",\n        \"type\": \"ws\"\n      },\n      \"type\": \"vless\",\n      \"uuid\": \"" + _0x1c8082.uuid + "\"\n    }";
-      } else {
-        if (_0x1c8082.type === "trojan") {
-          _0x565893 = "    {\n      \"domain_strategy\": \"ipv4_only\",\n      \"multiplex\": {\n        \"enabled\": false,\n        \"max_streams\": 32,\n        \"protocol\": \"smux\"\n      },\n      \"password\": \"" + _0x1c8082.password + "\",\n      \"server\": \"" + _0x1c8082.server + "\",\n      \"server_port\": " + _0x1c8082.port + ",\n      \"tag\": \"" + _0x1c8082.name + "\"," + (_0x1c8082.tls ? "\n      \"tls\": {\n        \"enabled\": true,\n        \"insecure\": false,\n        \"server_name\": \"" + (_0x1c8082.sni || _0x1c8082.server) + "\",\n        \"utls\": {\n          \"enabled\": true,\n          \"fingerprint\": \"randomized\"\n        }\n      }," : '') + "\n      \"transport\": {\n        \"early_data_header_name\": \"Sec-WebSocket-Protocol\",\n        \"headers\": {\n          \"Host\": \"" + (_0x1c8082.wsHost || _0x1c8082.server) + "\"\n        },\n        \"max_early_data\": 0,\n        \"path\": \"" + _0x1c8082.wsPath + "\",\n        \"type\": \"ws\"\n      },\n      \"type\": \"trojan\"\n    }";
-        } else if (_0x1c8082.type === 'ss') {
-          _0x565893 = "    {\n      \"type\": \"shadowsocks\",\n      \"tag\": \"" + _0x1c8082.name + "\",\n      \"server\": \"" + _0x1c8082.server + "\",\n      \"server_port\": " + _0x1c8082.port + ",\n      \"method\": \"none\",\n      \"password\": \"" + _0x1c8082.password + "\",\n      \"plugin\": \"v2ray-plugin\",\n      \"plugin_opts\": \"mux=0;path=" + _0x1c8082.wsPath + ';host=' + (_0x1c8082.wsHost || _0x1c8082.server) + ";tls=" + (_0x1c8082.tls ? '1' : '0') + "\"\n    }";
-        }
-      }
-    }
-    return _0x565893;
-  }).join(",\n");
-  _0x1885d1 += _0x2d2048;
-  _0x1885d1 += ",\n    {\n      \"tag\": \"direct\",\n      \"type\": \"direct\"\n    },\n    {\n      \"tag\": \"bypass\",\n      \"type\": \"direct\"\n    },\n    {\n      \"tag\": \"block\",\n      \"type\": \"block\"\n    },\n    {\n      \"tag\": \"dns-out\",\n      \"type\": \"dns\"\n    }\n  ],\n  \"route\": {\n    \"auto_detect_interface\": true,\n    \"rules\": [\n      {\n        \"outbound\": \"dns-out\",\n        \"port\": [\n          53\n        ]\n      },\n      {\n        \"inbound\": [\n          \"dns-in\"\n        ],\n        \"outbound\": \"dns-out\"\n      },\n      {\n        \"network\": [\n          \"udp\"\n        ],\n        \"outbound\": \"block\",\n        \"port\": [\n          443\n        ],\n        \"port_range\": []\n      },\n      {\n        \"ip_cidr\": [\n          \"224.0.0.0/3\",\n          \"ff00::/8\"\n        ],\n        \"outbound\": \"block\",\n        \"source_ip_cidr\": [\n          \"224.0.0.0/3\",\n          \"ff00::/8\"\n        ]\n      }\n    ]\n  }\n}";
-  return _0x1885d1;
-}
-function showLoading(_0x544805) {
-  loadingElement.style.display = "block";
-  loadingElement.querySelector(".loading-text").textContent = _0x544805;
-  resultElement.style.display = "none";
-  validationStatusElement.style.display = 'none';
-}
-function hideLoading() {
-  loadingElement.style.display = "none";
-}
-function showError(_0x20bbbc) {
-  errorMessageElement.textContent = _0x20bbbc;
-  errorMessageElement.style.display = "block";
-}
-function showResult(_0xcc5258) {
-  hideLoading();
-  validationStatusElement.style.display = "none";
-  outputElement.value = _0xcc5258;
-  resultElement.style.display = 'block';
-  resultElement.scrollIntoView({
-    'behavior': "smooth"
-  });
-}
-function shuffleArray(_0xd9add7) {
-  for (let _0x502beb = _0xd9add7.length - 0x1; _0x502beb > 0x0; _0x502beb--) {
-    const _0x1d417d = Math.floor(Math.random() * (_0x502beb + 0x1));
-    [_0xd9add7[_0x502beb], _0xd9add7[_0x1d417d]] = [_0xd9add7[_0x1d417d], _0xd9add7[_0x502beb]];
-  }
-  return _0xd9add7;
+function html(body) {
+  return new Response(body, { headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
