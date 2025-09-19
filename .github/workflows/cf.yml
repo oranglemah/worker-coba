@@ -1,0 +1,36 @@
+name: cf workers
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE.md'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: cf
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: |
+          rustup update
+          rustup target add wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2        # ← cache ~/.cargo & target
+
+      - name: Install worker-build (pinned)
+        run: cargo install worker-build --version 0.0.11 --quiet
+
+      - name: Build with worker-build (no wasm-opt)
+        run: WASMOPT=0 worker-build --release
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          packageManager: npm                # ← hindari pnpm/yarn otomatis

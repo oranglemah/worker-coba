@@ -1,0 +1,41 @@
+name = "dia"
+account_id = "7e6b4320b3200424e6b2ae7ba87e8805"
+main = "build/worker/shim.mjs"
+compatibility_date = "2024-05-23"
+minify = true
+
+# Dev default ke *.workers.dev (tanpa routes)
+workers_dev = true
+
+# ===== KV bindings (berlaku untuk semua env) =====
+[[kv_namespaces]]
+binding = "DIA"
+id = "c663aa93c21c4d25a93b31b0e92eeaf2"
+
+# ===== Rust custom build (butuh Cargo di CI/runner) =====
+[build]
+command = "cargo install -q worker-build && worker-build --release"
+
+# ===== DEV (untuk testing di workers.dev) =====
+[env.dev]
+workers_dev = true
+build = { command = "cargo install -q worker-build && worker-build --dev" }
+
+# ===== PRODUCTION (aktifkan semua custom domain di sini) =====
+[env.production]
+routes = [
+  { pattern = "dia.oranglemah.web.id", custom_domain = true },
+  { pattern = "support.zoom.us.xnxx.dia.oranglemah.web.id", custom_domain = true },
+  { pattern = "ava.game.naver.com.dia.oranglemah.web.id", custom_domain = true },
+  { pattern = "graph.instagram.com.dia.oranglemah.web.id", custom_domain = true },
+  { pattern = "df.game.naver.com.dia.oranglemah.web.id", custom_domain = true },
+  { pattern = "zoomgov.com.dia.oranglemah.web.id", custom_domain = true }
+]
+
+
+[vars]
+UUID = "fccdaaae-af39-41a7-9fde-fd32a48278cf"
+MAIN_PAGE_URL      = "https://raw.githubusercontent.com/oranglemah/FinalSiren/refs/heads/master/web/index.html"
+SUB_PAGE_URL       = "https://raw.githubusercontent.com/oranglemah/FinalSiren/refs/heads/master/web/sub.html"
+LINK_PAGE_URL      = "https://raw.githubusercontent.com/oranglemah/FinalSiren/refs/heads/master/web/link.html"
+CONVERTER_PAGE_URL = "https://raw.githubusercontent.com/oranglemah/FinalSiren/refs/heads/master/web/converter.html"
