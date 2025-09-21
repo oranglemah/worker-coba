@@ -1,4 +1,3 @@
-console.log("serverDomains =", serverDomains)
 /**
  * JavaScript for the link generator page
  */
@@ -12,24 +11,27 @@ let filteredProxyList = []
 let selectedProxy = null
 const defaultProxyUrl = "https://raw.githubusercontent.com/AFRcloud/ProxyList/refs/heads/main/ProxyList.txt"
 
+// === Server domains (merge + dedupe) ===
 const DEFAULT_SERVER_DOMAINS = [
   "sirtu.oranglemah.my.id",
   "dia.oranglemah.web.id",
 ]
 
-// Ambil dari window.SERVER_DOMAINS (jika ada), gabungkan dg default, lalu dedupe
-const serverDomains =
-  Array.isArray(window.SERVER_DOMAINS) && window.SERVER_DOMAINS.length
-    ? Array.from(new Set([...DEFAULT_SERVER_DOMAINS, ...window.SERVER_DOMAINS]))
-    : DEFAULT_SERVER_DOMAINS
+// Ambil dari window.SERVER_DOMAINS kalau ada, lalu gabungkan dengan default
+const serverDomains = Array.from(new Set([
+  ...(Array.isArray(window.SERVER_DOMAINS) ? window.SERVER_DOMAINS : []),
+  ...DEFAULT_SERVER_DOMAINS,
+]))
 
-let selectedServerDomain = serverDomains[0];
+let selectedServerDomain = serverDomains[0]
+console.log("serverDomains =", serverDomains) // <-- pindahkan log SETELAH variabel didefinisikan
 
 const defaultUUID = "8febb7c9-a664-4b16-bbc5-563b099a4860"
 const itemsPerPage = 10
 let currentPage = 1
 
 const pathTemplate = "/Free/{ip}-{port}"
+
 
 // Array of bug options for easy management
 const bugOptions = [
