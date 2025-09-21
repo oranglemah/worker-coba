@@ -1,279 +1,450 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>AFRCloud-NET | Link/Config Generator</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  />
+  <title>AFRCloud-NET || Subscription</title>
 
   <!-- Favicon -->
-  <link rel="icon" href="https://raw.githubusercontent.com/AFRcloud/BG/main/icons8-film-noir-80.png" />
+  <link rel="icon" href="https://raw.githubusercontent.com/AFRcloud/BG/main/icons8-film-noir-80.png"/>
 
-  <!-- Fonts & Icons -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
 
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Existing CSS (keep functionality) -->
+  <link rel="stylesheet" href="css/common.css"/>
+  <link rel="stylesheet" href="css/sub.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
+  <!-- Visual refresh (override styles only) -->
   <style>
-    :root { color-scheme: dark; }
-    html, body { height: 100%; }
-    body {
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    :root{
+      --bg:#0b1020;
+      --card:#0f172a;
+      --muted:#a5b4fc; /* indigo-200 */
+      --accent:#7c3aed; /* violet-600 */
+      --accent-2:#22d3ee; /* cyan-400 */
+      --text:#e5e7eb; /* gray-200 */
+      --soft:#94a3b8; /* slate-400 */
+      --danger:#fb7185; /* rose-400 */
+      --success:#34d399; /* emerald-400 */
+      --glass: rgba(15, 23, 42, .72);
+      --stroke: rgba(255,255,255,.08);
+    }
+
+    /* Background with subtle gradients and grid */
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--text);
       background:
-        radial-gradient(1200px 600px at 10% -10%, rgba(129,140,248,.15), transparent 60%),
-        radial-gradient(900px 500px at 110% 10%, rgba(56,189,248,.12), transparent 55%),
-        radial-gradient(700px 400px at 50% 100%, rgba(236,72,153,.12), transparent 60%),
-        #0b1020;
+        radial-gradient(900px 500px at 10% -10%, rgba(124,58,237,.15), transparent 60%),
+        radial-gradient(700px 400px at 110% 0%, rgba(34,211,238,.12), transparent 55%),
+        radial-gradient(800px 600px at 50% 120%, rgba(236,72,153,.10), transparent 60%),
+        var(--bg);
+      font-family: "Rajdhani", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
     }
-    .brand {
-      letter-spacing: .08em;
-      font-family: Orbitron, Inter, sans-serif;
+
+    /* Container & card */
+    .container{
+      max-width: 980px;
+      padding: 32px 18px 80px;
+      margin: 0 auto;
     }
-    .glass {
-      @apply bg-slate-900/50 backdrop-blur-xl border border-white/10 shadow-xl;
+    .card{
+      position: relative;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02)) , var(--glass);
+      border: 1px solid var(--stroke);
+      box-shadow: 0 20px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05);
+      padding: 28px 22px;
+      overflow: hidden;
     }
-    .field {
-      @apply w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 focus:border-transparent;
+    /* Decorative lines */
+    .tech-detail{position:absolute;opacity:.12;filter:blur(.4px)}
+    .tech-detail-1{inset:-20% auto auto -20%; width:360px;height:360px;border:1px solid var(--muted);border-radius:50%}
+    .tech-detail-2{inset:auto -10% -15% auto;width:420px;height:420px;border:1px dashed var(--accent-2);border-radius:50%}
+    .tech-detail-3{inset:10% -25% auto auto;width:180px;height:180px;background:radial-gradient(closest-side, rgba(124,58,237,.4), transparent)}
+
+    /* Title */
+    .title-container{ text-align:center; margin-bottom: 22px;}
+    .title{
+      margin:0;
+      font-family:"Orbitron", sans-serif;
+      font-weight:800;
+      letter-spacing:.08em;
+      font-size:28px;
+      background: linear-gradient(90deg, #fff, #c7d2fe 45%, #22d3ee 80%);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      text-shadow: 0 0 18px rgba(124,58,237,.25);
     }
-    .select {
-      @apply w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 focus:border-transparent;
+    .subtitle{
+      margin:8px 0 0;
+      color: var(--soft);
+      font-size: 14px;
+      letter-spacing:.06em;
     }
-    .btn-primary {
-      @apply inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold px-4 py-3 transition;
+
+    /* Form layout */
+    form#subLinkForm{ display:grid; gap:16px; }
+    .form-row{ display:grid; grid-template-columns: 1fr 220px; gap:16px; }
+    .form-group{ display:flex; flex-direction:column; gap:8px; }
+
+    /* Controls */
+    label{ font-size: 12px; letter-spacing:.12em; color:#cbd5e1; font-weight:700; }
+    .info-badge{
+      background: linear-gradient(90deg, rgba(124,58,237,.25), rgba(34,211,238,.25));
+      border: 1px solid var(--stroke);
+      color:#e0e7ff;
+      padding:.15rem .5rem; border-radius:999px; margin-left:.4rem; font-size:.65rem;
     }
-    .btn-ghost {
-      @apply inline-flex items-center justify-center gap-2 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium px-4 py-3 transition;
+    .form-control{
+      appearance:none; outline:none;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--stroke);
+      color: var(--text);
+      padding: 12px 14px;
+      border-radius: 14px;
+      transition: .2s ease;
+      font-weight:600;
+      letter-spacing:.02em;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
     }
-    .badge {
-      @apply inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1 text-xs text-white/80;
+    .form-control::placeholder{ color:#94a3b8; opacity:.8 }
+    .form-control:focus{
+      border-color: rgba(124,58,237,.55);
+      box-shadow: 0 0 0 6px rgba(124,58,237,.15), inset 0 1px 0 rgba(255,255,255,.06);
+      background: rgba(255,255,255,.055);
     }
-    /* Spinner ring */
-    .ring {
-      width: 42px; height: 42px; border-radius: 9999px;
-      border: 3px solid rgba(255,255,255,.15);
-      border-top-color: rgba(99,102,241,1);
+
+    /* UUID inline */
+    .uuid-group{ position:relative; }
+    .uuid-generate{
+      position:absolute; right:6px; top:34px;
+      border-radius: 10px;
+      border: 1px solid var(--stroke);
+      color:#e9d5ff;
+      background: linear-gradient(180deg, rgba(124,58,237,.35), rgba(124,58,237,.25));
+      padding:8px 12px; font-weight:800; letter-spacing:.08em;
+      cursor:pointer;
+      transition:.2s;
+    }
+    .uuid-generate:hover{ filter:brightness(1.05); transform: translateY(-1px); }
+
+    /* Custom bug helper text */
+    .select-info{ color:#9ca3af; font-size:12px; margin-top:-4px }
+    .custom-bug-container .form-control{ font-family: "Share Tech Mono", monospace; }
+
+    /* Checkbox line */
+    .validation-group .form-check{
+      display:flex; align-items:center; gap:10px;
+      background: rgba(34,197,94,.06);
+      border:1px solid rgba(34,197,94,.18);
+      padding:12px 14px; border-radius:14px;
+    }
+    .form-check-input{ width:18px; height:18px; accent-color:#34d399; }
+
+    /* Buttons */
+    .btn{
+      width:100%;
+      border:0;
+      padding:14px 16px;
+      border-radius: 14px;
+      color:#0b1020;
+      font-weight:900; letter-spacing:.08em;
+      background-image: linear-gradient(135deg, #a78bfa, #22d3ee);
+      cursor:pointer; transition:.25s;
+      box-shadow: 0 12px 30px rgba(34,211,238,.25);
+    }
+    .btn:hover{ transform: translateY(-1px); box-shadow:0 16px 36px rgba(34,211,238,.35); }
+    .btn:active{ transform: translateY(0); }
+
+    /* Loading */
+    .loading{ display:none; align-items:center; gap:14px; margin-top:14px; }
+    .spinner{
+      width:36px; height:36px; border-radius:999px;
+      border:3px solid rgba(255,255,255,.16);
+      border-top-color:#a78bfa;
       animation: spin 1s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text{ color:#c7d2fe; letter-spacing:.06em; }
+    .typing{ overflow:hidden; white-space:nowrap; animation: typing 3.5s steps(40,end) infinite alternate; }
+    @keyframes spin{ to{ transform: rotate(360deg);} }
+    @keyframes typing{ from{ width:0 } to{ width:100% } }
 
-    /* Progress bar for validation */
-    .progress {
-      @apply h-2 w-full rounded-full bg-white/10 overflow-hidden;
+    /* Validation status */
+    .validation-status{ display:none; margin-top:16px; }
+    .validation-progress{
+      height:10px; border-radius:999px; background:rgba(255,255,255,.08);
+      border:1px solid var(--stroke); overflow:hidden; margin:8px 0 6px;
     }
-    .progress > span {
-      @apply block h-full bg-emerald-400 transition-all duration-300;
-      width: 0%;
+    .validation-bar{
+      width:0%; height:100%;
+      background: linear-gradient(90deg, #34d399, #22d3ee);
+      box-shadow: 0 0 14px rgba(34,211,238,.35) inset;
+      transition: width .25s ease;
+    }
+    .validation-stats{ display:flex; gap:14px; color:#cbd5e1; font-size:13px;}
+    .validation-stats div{ background:rgba(255,255,255,.04); border:1px solid var(--stroke); padding:8px 10px; border-radius:10px; }
+    #valid-count{ color:var(--success); font-weight:800 }
+    #invalid-count{ color:var(--danger); font-weight:800 }
+
+    /* Result */
+    .result{ display:none; margin-top:18px; }
+    .result-header{
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 12px 14px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(34,211,238,.08), rgba(124,58,237,.08));
+    }
+    .result-title{
+      font-weight:900; letter-spacing:.1em;
+      color:#e0e7ff;
+    }
+    .output-container{ margin-top:10px }
+    .output{
+      width:100%; min-height:240px; resize:vertical;
+      background: rgba(0,0,0,.35);
+      border: 1px solid var(--stroke);
+      border-radius:14px; color:#e5e7eb;
+      padding:14px; font: 13px/1.45 "Share Tech Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .copy-btn{
+      margin-top:10px; width:100%;
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      color:#0b1020; font-weight:900; letter-spacing:.08em;
+      border:0; border-radius:12px; padding:12px 14px;
+      background-image: linear-gradient(135deg, #a7f3d0, #93c5fd);
+      cursor:pointer; transition:.2s;
+      box-shadow: 0 12px 30px rgba(59,130,246,.25);
+    }
+    .copy-btn:hover{ transform: translateY(-1px); }
+    .copy-icon{ width:18px; height:18px }
+
+    /* Error */
+    .error-message{
+      display:none; margin-top:12px;
+      background: rgba(251,113,133,.1);
+      border:1px solid rgba(251,113,133,.35);
+      color:#fecaca; padding:10px 12px; border-radius:12px;
+      font-weight:700; letter-spacing:.04em;
     }
 
-    /* Code box */
-    .code {
-      @apply w-full min-h-[220px] rounded-xl bg-slate-900/80 border border-white/10 p-4 font-mono text-sm;
-      white-space: pre; overflow: auto;
+    /* Footer polish */
+    .footer{
+      position: relative; overflow:hidden;
+      margin: 30px auto 24px; text-align:center; color:#94a3b8;
     }
+    .footer-logo{
+      font-family:"Orbitron", sans-serif; font-weight:800; letter-spacing:.12em;
+      background: linear-gradient(90deg, #e2e8f0, #a5b4fc);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      margin-bottom:6px;
+    }
+    .footer-powered{ font-size:12px; letter-spacing:.16em; margin-bottom:6px; }
+    .footer-social{ display:flex; gap:12px; justify-content:center; margin:8px 0; }
+    .social-link{ color:#c7d2fe; text-decoration:none; font-weight:700; letter-spacing:.04em; display:flex; gap:8px; align-items:center; background:rgba(255,255,255,.04); padding:8px 10px; border:1px solid var(--stroke); border-radius:999px; }
+    .social-link:hover{ background:rgba(124,58,237,.15); }
+    .social-icon{ width:16px; height:16px }
+    .footer-year{ font-size:12px; opacity:.75; margin-top:6px; }
+
+    /* Keep existing decorative elements (circuit-*) visually softer */
+    .circuit-line, .circuit-dot{ opacity:.25; }
   </style>
 </head>
+
 <body>
-  <header class="max-w-6xl mx-auto px-5 pt-8 pb-4">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="size-10 rounded-xl bg-indigo-500/20 border border-indigo-300/20 grid place-items-center text-indigo-300">
-          <i class="fa-solid fa-bolt"></i>
+  <div class="container">
+    <div class="card">
+      <div class="tech-detail tech-detail-1"></div>
+      <div class="tech-detail tech-detail-2"></div>
+      <div class="tech-detail tech-detail-3"></div>
+
+      <div class="title-container">
+        <h1 class="title">AFRCloud-NET</h1>
+        <p class="subtitle">Advanced Subscription Link Generator</p>
+      </div>
+
+      <!-- === FORM (IDs & structure preserved) === -->
+      <form id="subLinkForm">
+        <div class="form-group">
+          <label for="configType">PROTOCOL TYPE</label>
+          <select id="configType" class="form-control" required>
+            <option value="vless">VLESS</option>
+            <option value="vmess">VMESS</option>
+            <option value="trojan">TROJAN</option>
+            <option value="shadowsocks">SHADOWSOCKS</option>
+            <option value="mix">MIX (ALL PROTOCOLS)</option>
+          </select>
         </div>
-        <div>
-          <h1 class="brand text-xl text-white">AFRCloud-NET</h1>
-          <p class="text-white/50 text-xs -mt-0.5">Advanced Link / Config Generator</p>
+
+        <div class="form-group">
+          <label for="formatType">FORMAT TYPE</label>
+          <select id="formatType" class="form-control" required>
+            <option value="v2ray">Link V2RAY</option>
+            <option value="nekobox">Config NEKOBOX</option>
+            <option value="clash">Proxy_Provider CLASH</option>
+          </select>
+        </div>
+
+        <div class="form-group uuid-group">
+          <label for="uuid">UUID</label>
+          <input type="text" id="uuid" class="form-control" value="fccdaaae-af39-41a7-9fde-fd32a48278cf" required />
+          <button type="button" id="generateUuid" class="uuid-generate">
+            <i class="fa-solid fa-shuffle"></i> GENERATE
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label for="bugType">BUG TYPE</label>
+          <select id="bugType" class="form-control" required>
+            <option value="default">DIRECT</option>
+            <option value="non-wildcard">WEBSOCKET</option>
+            <option value="wildcard">WILDCARD WEBSOCKET</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="mainDomain">MAIN DOMAIN <span class="info-badge">SELECT</span></label>
+          <select id="mainDomain" class="form-control" required>
+            <option value="sirtu.oranglemah.my.id">sirtu.oranglemah.my.id</option>
+          </select>
+        </div>
+
+        <div id="customBugContainer" class="form-group custom-bug-container">
+          <label for="customBug">CUSTOM BUG</label>
+          <input type="text" id="customBug" class="form-control" placeholder="Example : BUG-WLG.COM, BUG-VIU.COM, BUG-ZOOM.COM" />
+          <div class="select-info">Pisah Dengan Koma Jika Ingin Banyak BUG sekaligus</div>
+          <div class="select-info">Supported Wildcard : ava.game.naver.com, quiz.int.vidio.com, graph.instagram.com, zaintest.vuclip.com, support.zoom.us, cache.netflix.com</div>
+        </div>
+
+        <div class="form-group">
+          <label for="tls">TLS ENCRYPTION</label>
+          <select id="tls" class="form-control">
+            <option value="true">ENABLED</option>
+            <option value="false">DISABLED</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="country">REGION FILTER</label>
+            <select id="country" class="form-control">
+              <option value="">Loading regions...</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="limit">QUANTITY</label>
+            <input type="number" id="limit" class="form-control" min="1" max="50" value="5" placeholder="Max 50" required />
+          </div>
+        </div>
+
+        <div class="form-group validation-group">
+          <label class="form-check">
+            <input type="checkbox" id="validateProxies" class="form-check-input" checked />
+            <span class="form-check-label">Filter ProxyIP ACTIVE Untuk Subscription?</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn">Generate Configuration</button>
+      </form>
+
+      <!-- Loading -->
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <div class="loading-text typing">Fetching proxy data and generating configs...</div>
+      </div>
+
+      <!-- Validation status -->
+      <div id="validation-status" class="validation-status">
+        <div>Validating proxies... <span id="validation-count">0/0</span></div>
+        <div class="validation-progress">
+          <div id="validation-bar" class="validation-bar"></div>
+        </div>
+        <div class="validation-stats">
+          <div>Valid: <span id="valid-count">0</span></div>
+          <div>Invalid: <span id="invalid-count">0</span></div>
         </div>
       </div>
-      <a class="btn-ghost text-sm" href="https://t.me/Noir7R" target="_blank" rel="noopener">
-        <i class="fa-brands fa-telegram"></i> Support
+
+      <!-- Error -->
+      <div id="error-message" class="error-message"></div>
+
+      <!-- Result -->
+      <div id="result" class="result">
+        <div class="result-header">
+          <div class="result-title">CONFIGURATION GENERATED</div>
+        </div>
+        <div class="output-container">
+          <textarea id="output" class="output" readonly></textarea>
+        </div>
+        <button id="copyLink" class="copy-btn">
+          <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          COPY CONFIGURATION
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer (unchanged IDs/classes) -->
+  <footer class="footer">
+    <div class="circuit-line circuit-line-1"></div>
+    <div class="circuit-line circuit-line-2"></div>
+    <div class="circuit-line circuit-line-3"></div>
+    <div class="circuit-line circuit-line-4"></div>
+    <div class="circuit-dot circuit-dot-1"></div>
+    <div class="circuit-dot circuit-dot-2"></div>
+    <div class="circuit-dot circuit-dot-3"></div>
+    <div class="circuit-dot circuit-dot-4"></div>
+
+    <div class="footer-logo">AFRCloud-NET</div>
+    <div class="footer-powered">POWERED BY SECURE TECHNOLOGY</div>
+
+    <div class="footer-social">
+      <a href="https://t.me/Noir7R" class="social-link" target="_blank" rel="noopener">
+        <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-8.609 3.33c-2.068.8-4.133 1.598-5.724 2.21a405.15 405.15 0 0 1-2.849 1.09c-.42.147-.99.332-1.473.901-.728.968.193 1.798.919 2.286 1.61.516 3.275 1.009 4.654 1.472.846 1.467 1.618 2.796 2.503 4.532.545 1.062 1.587 2.739 3.19 2.756 1.26.033 2.052-.6 3.542-1.95a142.91 142.91 0 0 1 2.43-2.053c1.686-.142 3.382-.284 5.12-.436.887-.075 1.92-.262 2.405-1.226.436-.877-.015-1.35-.48-1.874l-3.881-4.369-5.481-6.174S22.185 2.128 21.198 2.433z"></path>
+          <path d="M18.167 7.068c.237 1.632-1.162 6.872-1.766 8.849"></path>
+        </svg>
+        @Noir7R
       </a>
     </div>
-  </header>
-
-  <main class="max-w-6xl mx-auto px-5 pb-24">
-    <div class="grid lg:grid-cols-2 gap-6">
-      <!-- Left: Form -->
-      <section class="glass rounded-2xl p-5 md:p-6">
-        <div class="flex items-center justify-between mb-5">
-          <h2 class="text-white text-lg font-semibold">Generate Configuration</h2>
-          <span class="badge"><i class="fa-solid fa-shield-halved"></i> Secure</span>
-        </div>
-
-        <form id="subLinkForm" class="space-y-5">
-          <!-- Line 1 -->
-          <div class="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-white/70 text-sm mb-2" for="configType">Protocol</label>
-              <select id="configType" class="select">
-                <option value="vmess">VMess</option>
-                <option value="vless">VLESS</option>
-                <option value="trojan">Trojan</option>
-                <option value="shadowsocks">Shadowsocks</option>
-                <option value="mix">Mix (All)</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-white/70 text-sm mb-2" for="formatType">Output Format</label>
-              <select id="formatType" class="select">
-                <option value="v2ray">V2Ray Links</option>
-                <option value="clash">Clash (YAML)</option>
-                <option value="nekobox">NekoBox JSON</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Line 2 -->
-          <div class="grid sm:grid-cols-3 gap-4">
-            <div class="sm:col-span-2">
-              <label class="block text-white/70 text-sm mb-2" for="uuid">UUID / Password</label>
-              <input id="uuid" type="text" class="field" placeholder="8febb7c9-a664-4b16-bbc5-563b099a4860" />
-            </div>
-            <div class="flex sm:items-end">
-              <button id="generateUuid" type="button" class="btn-ghost w-full sm:w-auto mt-6 sm:mt-0">
-                <i class="fa-solid fa-shuffle"></i> Generate
-              </button>
-            </div>
-          </div>
-
-          <!-- Line 3 -->
-          <div class="grid sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-white/70 text-sm mb-2" for="bugType">Bug Type</label>
-              <select id="bugType" class="select">
-                <option value="default">Default (pakai domain utama)</option>
-                <option value="non-wildcard">Custom (non-wildcard)</option>
-                <option value="wildcard">Custom (wildcard)</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-white/70 text-sm mb-2" for="mainDomain">Server Domain</label>
-              <select id="mainDomain" class="select">
-                <!-- akan diisi otomatis dari CONFIG.mainDomains -->
-              </select>
-            </div>
-            <div>
-              <label class="block text-white/70 text-sm mb-2" for="tls">TLS</label>
-              <select id="tls" class="select">
-                <option value="true">TLS</option>
-                <option value="false">Tanpa TLS</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Custom bug -->
-          <div id="customBugContainer" class="hidden">
-            <label class="block text-white/70 text-sm mb-2" for="customBug">Custom Bug (pisahkan dengan koma untuk banyak domain)</label>
-            <input id="customBug" type="text" class="field" placeholder="contoh: cdn.example.com, img.example.com"/>
-            <p class="text-white/40 text-xs mt-2">
-              • Mode <b>non-wildcard</b> → Host/SNI tetap domain utama, Header Host = custom bug<br/>
-              • Mode <b>wildcard</b> → Host/SNI &amp; Header Host memakai <i>bug.mainDomain</i>
-            </p>
-          </div>
-
-          <!-- Line 4 -->
-          <div class="grid sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-white/70 text-sm mb-2" for="country">Country</label>
-              <select id="country" class="select">
-                <option value="">All Countries</option>
-                <!-- akan diisi otomatis dari daftar proxy -->
-              </select>
-            </div>
-            <div>
-              <label class="block text-white/70 text-sm mb-2" for="limit">Proxy Count</label>
-              <input id="limit" class="field" type="number" min="1" max="50" value="5"/>
-            </div>
-            <div class="flex items-end">
-              <label class="flex items-center gap-3 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3">
-                <input id="validateProxies" type="checkbox" class="size-4 accent-emerald-400"/>
-                <span class="text-sm text-white/80">Validate proxies (latency check)</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Error -->
-          <div id="error-message" class="hidden text-rose-300 bg-rose-500/10 border border-rose-400/20 rounded-xl px-4 py-3 text-sm"></div>
-
-          <!-- Actions -->
-          <div class="flex flex-col sm:flex-row gap-3">
-            <button type="submit" class="btn-primary w-full">
-              <i class="fa-solid fa-wand-magic-sparkles"></i> Generate
-            </button>
-            <button type="reset" class="btn-ghost w-full"
-                    onclick="document.getElementById('error-message').style.display='none'">
-              <i class="fa-solid fa-rotate"></i> Reset
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <!-- Right: Status + Result -->
-      <section class="space-y-6">
-        <!-- Loading -->
-        <div id="loading" class="glass rounded-2xl p-6 hidden">
-          <div class="flex items-center gap-4">
-            <div class="ring" aria-hidden="true"></div>
-            <div>
-              <p class="loading-text text-white/90 font-semibold">Loading…</p>
-              <p class="text-white/50 text-sm">Please wait while we fetch proxies and build your config.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Validation status -->
-        <div id="validation-status" class="glass rounded-2xl p-6 hidden">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-white font-semibold">Validating proxies</h3>
-            <span class="badge"><i class="fa-solid fa-stopwatch"></i> <span id="validation-count">0/0</span></span>
-          </div>
-          <div class="progress"><span id="validation-bar"></span></div>
-          <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
-            <div class="glass rounded-xl p-3">
-              <div class="text-emerald-300 font-semibold" id="valid-count">0</div>
-              <div class="text-white/60">Valid</div>
-            </div>
-            <div class="glass rounded-xl p-3">
-              <div class="text-rose-300 font-semibold" id="invalid-count">0</div>
-              <div class="text-white/60">Invalid</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Result -->
-        <div id="result" class="glass rounded-2xl p-6 hidden">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-white font-semibold">Your Output</h3>
-            <button id="copyLink" class="btn-primary text-sm">
-              <svg class="copy-icon size-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-                   viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-              COPY CONFIGURATION
-            </button>
-          </div>
-          <textarea id="output" class="code" readonly placeholder="Generated links / config will appear here…"></textarea>
-        </div>
-
-        <!-- Tips -->
-        <div class="glass rounded-2xl p-6">
-          <h3 class="text-white font-semibold mb-2">Tips</h3>
-          <ul class="space-y-1.5 text-sm text-white/70 list-disc list-inside">
-            <li>“Bug Type = wildcard” akan memakai format <code>bug.mainDomain</code> untuk Host dan SNI.</li>
-            <li>Aktifkan “Validate proxies” bila ingin menyaring proxy yang mati sebelum dibuatkan link.</li>
-            <li>Output Clash dan NekoBox cocok untuk impor langsung ke aplikasi.</li>
-          </ul>
-        </div>
-      </section>
+    <div class="footer-social">
+      <a href="https://t.me/inconigto_Mode" class="social-link" target="_blank" rel="noopener">
+        <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-8.609 3.33c-2.068.8-4.133 1.598-5.724 2.21a405.15 405.15 0 0 1-2.849 1.09c-.42.147-.99.332-1.473.901-.728.968.193 1.798.919 2.286 1.61.516 3.275 1.009 4.654 1.472.846 1.467 1.618 2.796 2.503 4.532.545 1.062 1.587 2.739 3.19 2.756 1.26.033 2.052-.6 3.542-1.95a142.91 142.91 0 0 1 2.43-2.053c1.686-.142 3.382-.284 5.12-.436.887-.075 1.92-.262 2.405-1.226.436-.877-.015-1.35-.48-1.874l-3.881-4.369-5.481-6.174S22.185 2.128 21.198 2.433z"></path>
+          <path d="M18.167 7.068c.237 1.632-1.162 6.872-1.766 8.849"></path>
+        </svg>
+        @inconigto_Mode
+      </a>
+      <a href="https://t.me/InconigtoMode" class="social-link" target="_blank" rel="noopener">
+        <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-8.609 3.33c-2.068.8-4.133 1.598-5.724 2.21a405.15 405.15 0 0 1-2.849 1.09c-.42.147-.99.332-1.473.901-.728.968.193 1.798.919 2.286 1.61.516 3.275 1.009 4.654 1.472.846 1.467 1.618 2.796 2.503 4.532.545 1.062 1.587 2.739 3.19 2.756 1.26.033 2.052-.6 3.542-1.95a142.91 142.91 0 0 1 2.43-2.053c1.686-.142 3.382-.284 5.12-.436.887-.075 1.92-.262 2.405-1.226.436-.877-.015-1.35-.48-1.874l-3.881-4.369-5.481-6.174S22.185 2.128 21.198 2.433z"></path>
+          <path d="M18.167 7.068c.237 1.632-1.162 6.872-1.766 8.849"></path>
+        </svg>
+        @InconigtoMode
+      </a>
     </div>
-  </main>
+    <div class="footer-year">© <span id="current-year"></span></div>
+  </footer>
 
-  <!-- IMPORTANT: load your JS file AFTER the DOM -->
-  <!-- Ganti path di bawah dengan lokasi file JS yang kamu kirim (yang ada CONST CONFIG & fungsi2) -->
-  <script src="link.js" defer></script>
+  <!-- JS (kept intact for functionality) -->
+  <script src="js/common.js"></script>
+  <script src="js/sub.js"></script>
 </body>
 </html>
