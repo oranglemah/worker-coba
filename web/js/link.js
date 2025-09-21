@@ -161,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
   serverDomainSelects.forEach((select) => {
     if (select) {
       // Clear existing options
-      select.innerHTML = ""
+      select.innerHTML = "sirtu.oranglemah.my.id"
 
       // Add options for each domain
       serverDomains.forEach((domain) => {
