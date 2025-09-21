@@ -1,8 +1,8 @@
 const CONFIG = {
   'proxyListUrl': "https://raw.githubusercontent.com/AFRcloud/ProxyList/refs/heads/main/ProxyList.txt",
   'apiCheckUrl': "https://api.jb8fd7grgd.workers.dev/",
-  'mainDomains': ["dia.oranglemah.web.id"],
-  'defaultUuid': 'fccdaaae-af39-41a7-9fde-fd32a48278cf',
+  'mainDomains': ["sirtu.oranglemah.my.id"],
+  'defaultUuid': '8febb7c9-a664-4b16-bbc5-563b099a4860',
   'maxProxies': 0x32,
   'defaultProxyCount': 0x5,
   'pathTemplate': "/Free/{ip}-{port}"
