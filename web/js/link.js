@@ -11,9 +11,9 @@ let filteredProxyList = []
 let selectedProxy = null
 const defaultProxyUrl = "https://raw.githubusercontent.com/AFRcloud/ProxyList/refs/heads/main/ProxyList.txt"
 
-const serverDomains = ["dia.oranglemah.web.id"]
-let selectedServerDomain = "dia.oranglemah.web.id"
-const defaultUUID = "fccdaaae-af39-41a7-9fde-fd32a48278cf"
+const serverDomains = ["sirtu.oranglemah.web.id"]
+let selectedServerDomain = "sirtu.oranglemah.web.id"
+const defaultUUID = "8febb7c9-a664-4b16-bbc5-563b099a4860"
 const itemsPerPage = 10
 let currentPage = 1
 
