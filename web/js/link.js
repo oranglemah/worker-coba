@@ -12,9 +12,16 @@ let filteredProxyList = []
 let selectedProxy = null
 const defaultProxyUrl = "https://raw.githubusercontent.com/AFRcloud/ProxyList/refs/heads/main/ProxyList.txt"
 
-const serverDomains = Array.isArray(window.SERVER_DOMAINS) && window.SERVER_DOMAINS.length
-  ? window.SERVER_DOMAINS
-  : ["sirtu.oranglemah.my.id"];
+const DEFAULT_SERVER_DOMAINS = [
+  "sirtu.oranglemah.my.id",
+  "dia.oranglemah.web.id",
+]
+
+// Ambil dari window.SERVER_DOMAINS (jika ada), gabungkan dg default, lalu dedupe
+const serverDomains =
+  Array.isArray(window.SERVER_DOMAINS) && window.SERVER_DOMAINS.length
+    ? Array.from(new Set([...DEFAULT_SERVER_DOMAINS, ...window.SERVER_DOMAINS]))
+    : DEFAULT_SERVER_DOMAINS
 
 let selectedServerDomain = serverDomains[0];
 
