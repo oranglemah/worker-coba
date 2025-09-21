@@ -35,7 +35,7 @@ routes = [
 
 [vars]
 UUID = "8febb7c9-a664-4b16-bbc5-563b099a4860"
-MAIN_PAGE_URL      = "https://raw.githubusercontent.com/oranglemah/FinalSiren/refs/heads/master/web/index.html"
-SUB_PAGE_URL       = "https://raw.githubusercontent.com/oranglemah/FinalSiren/refs/heads/master/web/sub.html"
-LINK_PAGE_URL      = "https://raw.githubusercontent.com/oranglemah/FinalSiren/refs/heads/master/web/link.html"
-CONVERTER_PAGE_URL = "https://raw.githubusercontent.com/oranglemah/FinalSiren/refs/heads/master/web/converter.html"
+MAIN_PAGE_URL      = "https://raw.githubusercontent.com/Zulfatok/worker-coba/refs/heads/main/web/index.html"
+SUB_PAGE_URL       = "https://raw.githubusercontent.com/oranglemah/worker-coba/refs/heads/main/web/sub.html"
+LINK_PAGE_URL      = "https://raw.githubusercontent.com/Zulfatok/worker-coba/refs/heads/main/web/link.html"
+CONVERTER_PAGE_URL = "https://raw.githubusercontent.com/Zulfatok/worker-coba/refs/heads/main/web/converter.html"
