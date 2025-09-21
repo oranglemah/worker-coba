@@ -62,22 +62,29 @@ function populateBugOptions() {
     document.getElementById("vless-bug"),
     document.getElementById("trojan-bug"),
     document.getElementById("ss-bug"),
-  ]
+  ];
 
-  bugSelects.forEach((select) => {
-    if (select) {
-      // Clear existing options
-      select.innerHTML = ""
+  bugSelects.forEach((el) => {
+    if (!el) return;
 
-      // Add options from the array
-      bugOptions.forEach((option) => {
-        const optionElement = document.createElement("option")
-        optionElement.value = option.value
-        optionElement.textContent = option.label
-        select.appendChild(optionElement)
-      })
-    }
-  })
+    // Kalau HTML pakai <input>, jangan diapa-apain
+    if (el.tagName !== "SELECT") return;
+
+    // Kalau memang SELECT, baru isi option
+    el.innerHTML = "";
+    bugOptions.forEach((opt) => {
+      const o = document.createElement("option");
+      o.value = opt.value;
+      o.textContent = opt.label;
+      el.appendChild(o);
+    });
+
+    // (opsional) tambahkan opsi "manual"
+    const manual = document.createElement("option");
+    manual.value = "manual";
+    manual.textContent = "Manual";
+    el.appendChild(manual);
+  });
 }
 
 // Initialize
