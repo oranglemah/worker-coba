@@ -1,198 +1,279 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AFRCloud-NET || Subscription</title>
-    
-    <!-- Favicon -->
-    <link rel="icon" href="https://raw.githubusercontent.com/AFRcloud/BG/main/icons8-film-noir-80.png"/>
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/common.css">
-    <link rel="stylesheet" href="css/sub.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* This style is now in common.css */
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AFRCloud-NET | Link/Config Generator</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="https://raw.githubusercontent.com/AFRcloud/BG/main/icons8-film-noir-80.png" />
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root { color-scheme: dark; }
+    html, body { height: 100%; }
+    body {
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(129,140,248,.15), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(56,189,248,.12), transparent 55%),
+        radial-gradient(700px 400px at 50% 100%, rgba(236,72,153,.12), transparent 60%),
+        #0b1020;
+    }
+    .brand {
+      letter-spacing: .08em;
+      font-family: Orbitron, Inter, sans-serif;
+    }
+    .glass {
+      @apply bg-slate-900/50 backdrop-blur-xl border border-white/10 shadow-xl;
+    }
+    .field {
+      @apply w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 focus:border-transparent;
+    }
+    .select {
+      @apply w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 focus:border-transparent;
+    }
+    .btn-primary {
+      @apply inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold px-4 py-3 transition;
+    }
+    .btn-ghost {
+      @apply inline-flex items-center justify-center gap-2 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium px-4 py-3 transition;
+    }
+    .badge {
+      @apply inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1 text-xs text-white/80;
+    }
+    /* Spinner ring */
+    .ring {
+      width: 42px; height: 42px; border-radius: 9999px;
+      border: 3px solid rgba(255,255,255,.15);
+      border-top-color: rgba(99,102,241,1);
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Progress bar for validation */
+    .progress {
+      @apply h-2 w-full rounded-full bg-white/10 overflow-hidden;
+    }
+    .progress > span {
+      @apply block h-full bg-emerald-400 transition-all duration-300;
+      width: 0%;
+    }
+
+    /* Code box */
+    .code {
+      @apply w-full min-h-[220px] rounded-xl bg-slate-900/80 border border-white/10 p-4 font-mono text-sm;
+      white-space: pre; overflow: auto;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <div class="tech-detail tech-detail-1"></div>
-            <div class="tech-detail tech-detail-2"></div>
-            <div class="tech-detail tech-detail-3"></div>
-            
-            <div class="title-container">
-                <h1 class="title">AFRCloud-NET</h1>
-                <p class="subtitle">Advanced Subscription Link Generator</p>
-            </div>
-            
-            <form id="subLinkForm">
-                <div class="form-group">
-                    <label for="configType">PROTOCOL TYPE</label>
-                    <select id="configType" class="form-control" required>
-                        <option value="vless">VLESS</option>
-                        <option value="vmess">VMESS</option>
-                        <option value="trojan">TROJAN</option>
-                        <option value="shadowsocks">SHADOWSOCKS</option>
-                        <option value="mix">MIX (ALL PROTOCOLS)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="formatType">FORMAT TYPE</label>
-                    <select id="formatType" class="form-control" required>
-                        <option value="v2ray">Link V2RAY</option>
-                        <option value="nekobox">Config NEKOBOX</option>
-                        <option value="clash">Proxy_Provider CLASH</option>
-                    </select>
-                </div>
-                
-                <div class="form-group uuid-group">
-                    <label for="uuid">UUID</label>
-                    <input type="text" id="uuid" class="form-control" value="fccdaaae-af39-41a7-9fde-fd32a48278cf" required>
-                    <button type="button" id="generateUuid" class="uuid-generate">GENERATE</button>
-                </div>
-                
-                <div class="form-group">
-                    <label for="bugType">BUG TYPE</label>
-                    <select id="bugType" class="form-control" required>
-                        <option value="default">DIRECT</option>
-                        <option value="non-wildcard">WEBSOCKET</option>
-                        <option value="wildcard">WILDCARD WEBSOCKET</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="mainDomain">MAIN DOMAIN <span class="info-badge">SELECT</span></label>
-                    <select id="mainDomain" class="form-control" required>
-                        <option value="sirtu.oranglemah.my.id">sirtu.oranglemah.my.id</option>
-                    </select>
-                </div>
-                
-                <div id="customBugContainer" class="form-group custom-bug-container">
-                    <label for="customBug">CUSTOM BUG</label>
-                    <input type="text" id="customBug" class="form-control" placeholder="Example : BUG-WLG.COM, BUG-VIU.COM, BUG-ZOOM.COM">
-                    <div class="select-info">Pisah Dengan Koma Jika Ingin Banyak BUG sekaligus</div>
-                    <div class="select-info">Supported Wildcard : ava.game.naver.com, quiz.int.vidio.com, graph.instagram.com, zaintest.vuclip.com, support.zoom.us, cache.netflix.com</div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="tls">TLS ENCRYPTION</label>
-                    <select id="tls" class="form-control">
-                        <option value="true">ENABLED</option>
-                        <option value="false">DISABLED</option>
-                    </select>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="country">REGION FILTER</label>
-                        <select id="country" class="form-control">
-                            <option value="">Loading regions...</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="limit">QUANTITY</label>
-                        <input type="number" id="limit" class="form-control" min="1" max="50" value="5" placeholder="Max 50" required>
-                    </div>
-                </div>
-                
-                <div class="form-group validation-group">
-                    <label class="form-check">
-                        <input type="checkbox" id="validateProxies" class="form-check-input" checked>
-                        <span class="form-check-label">Filter ProxyIP ACTIVE Untuk Subscription?</span>
-                    </label>
-                </div>
-                
-                <button type="submit" class="btn">Generate Configuration</button>
-            </form>
-            
-            <div id="loading" class="loading">
-                <div class="spinner"></div>
-                <div class="loading-text typing">Fetching proxy data and generating configs...</div>
-            </div>
-            
-            <div id="validation-status" class="validation-status">
-                <div>Validating proxies... <span id="validation-count">0/0</span></div>
-                <div class="validation-progress">
-                    <div id="validation-bar" class="validation-bar"></div>
-                </div>
-                <div class="validation-stats">
-                    <div>Valid: <span id="valid-count">0</span></div>
-                    <div>Invalid: <span id="invalid-count">0</span></div>
-                </div>
-            </div>
-            
-            <div id="error-message" class="error-message"></div>
-            
-            <div id="result" class="result">
-                <div class="result-header">
-                    <div class="result-title">CONFIGURATION GENERATED</div>
-                </div>
-                <div class="output-container">
-                    <textarea id="output" class="output" readonly></textarea>
-                </div>
-                <button id="copyLink" class="copy-btn">
-                    <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                    </svg>
-                    COPY CONFIGURATION
-                </button>
-            </div>
+  <header class="max-w-6xl mx-auto px-5 pt-8 pb-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="size-10 rounded-xl bg-indigo-500/20 border border-indigo-300/20 grid place-items-center text-indigo-300">
+          <i class="fa-solid fa-bolt"></i>
         </div>
+        <div>
+          <h1 class="brand text-xl text-white">AFRCloud-NET</h1>
+          <p class="text-white/50 text-xs -mt-0.5">Advanced Link / Config Generator</p>
+        </div>
+      </div>
+      <a class="btn-ghost text-sm" href="https://t.me/Noir7R" target="_blank" rel="noopener">
+        <i class="fa-brands fa-telegram"></i> Support
+      </a>
     </div>
+  </header>
 
-    <footer class="footer">
-        <div class="circuit-line circuit-line-1"></div>
-        <div class="circuit-line circuit-line-2"></div>
-        <div class="circuit-line circuit-line-3"></div>
-        <div class="circuit-line circuit-line-4"></div>
-        <div class="circuit-dot circuit-dot-1"></div>
-        <div class="circuit-dot circuit-dot-2"></div>
-        <div class="circuit-dot circuit-dot-3"></div>
-        <div class="circuit-dot circuit-dot-4"></div>
-        
-        <div class="footer-logo">AFRCloud-NET</div>
-        <div class="footer-powered">POWERED BY SECURE TECHNOLOGY</div>
-        <div class="footer-social">
-            <a href="https://t.me/Noir7R" class="social-link" target="_blank">
-                <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-8.609 3.33c-2.068.8-4.133 1.598-5.724 2.21a405.15 405.15 0 0 1-2.849 1.09c-.42.147-.99.332-1.473.901-.728.968.193 1.798.919 2.286 1.61.516 3.275 1.009 4.654 1.472.846 1.467 1.618 2.796 2.503 4.532.545 1.062 1.587 2.739 3.19 2.756 1.26.033 2.052-.6 3.542-1.95a142.91 142.91 0 0 1 2.43-2.053c1.686-.142 3.382-.284 5.12-.436.887-.075 1.92-.262 2.405-1.226.436-.877-.015-1.35-.48-1.874l-3.881-4.369-5.481-6.174S22.185 2.128 21.198 2.433z"></path>
-                    <path d="M18.167 7.068c.237 1.632-1.162 6.872-1.766 8.849"></path>
-                </svg>
-                @Noir7R
-            </a>
-        </div>    
-        <div class="footer-social">
-            <a href="https://t.me/inconigto_Mode" class="social-link" target="_blank">
-                <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-8.609 3.33c-2.068.8-4.133 1.598-5.724 2.21a405.15 405.15 0 0 1-2.849 1.09c-.42.147-.99.332-1.473.901-.728.968.193 1.798.919 2.286 1.61.516 3.275 1.009 4.654 1.472.846 1.467 1.618 2.796 2.503 4.532.545 1.062 1.587 2.739 3.19 2.756 1.26.033 2.052-.6 3.542-1.95a142.91 142.91 0 0 1 2.43-2.053c1.686-.142 3.382-.284 5.12-.436.887-.075 1.92-.262 2.405-1.226.436-.877-.015-1.35-.48-1.874l-3.881-4.369-5.481-6.174S22.185 2.128 21.198 2.433z"></path>
-                    <path d="M18.167 7.068c.237 1.632-1.162 6.872-1.766 8.849"></path>
-                </svg>
-                @inconigto_Mode
-            </a>
-            <a href="https://t.me/InconigtoMode" class="social-link" target="_blank">
-                <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-8.609 3.33c-2.068.8-4.133 1.598-5.724 2.21a405.15 405.15 0 0 1-2.849 1.09c-.42.147-.99.332-1.473.901-.728.968.193 1.798.919 2.286 1.61.516 3.275 1.009 4.654 1.472.846 1.467 1.618 2.796 2.503 4.532.545 1.062 1.587 2.739 3.19 2.756 1.26.033 2.052-.6 3.542-1.95a142.91 142.91 0 0 1 2.43-2.053c1.686-.142 3.382-.284 5.12-.436.887-.075 1.92-.262 2.405-1.226.436-.877-.015-1.35-.48-1.874l-3.881-4.369-5.481-6.174S22.185 2.128 21.198 2.433z"></path>
-                    <path d="M18.167 7.068c.237 1.632-1.162 6.872-1.766 8.849"></path>
-                </svg>
-                @InconigtoMode
-            </a>
+  <main class="max-w-6xl mx-auto px-5 pb-24">
+    <div class="grid lg:grid-cols-2 gap-6">
+      <!-- Left: Form -->
+      <section class="glass rounded-2xl p-5 md:p-6">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-white text-lg font-semibold">Generate Configuration</h2>
+          <span class="badge"><i class="fa-solid fa-shield-halved"></i> Secure</span>
         </div>
-        <div class="footer-year">© <span id="current-year"></span></div>
-    </footer>
 
-    <!-- JavaScript -->
-    <script src="js/common.js"></script>
-    <script src="js/sub.js"></script>
+        <form id="subLinkForm" class="space-y-5">
+          <!-- Line 1 -->
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-white/70 text-sm mb-2" for="configType">Protocol</label>
+              <select id="configType" class="select">
+                <option value="vmess">VMess</option>
+                <option value="vless">VLESS</option>
+                <option value="trojan">Trojan</option>
+                <option value="shadowsocks">Shadowsocks</option>
+                <option value="mix">Mix (All)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-white/70 text-sm mb-2" for="formatType">Output Format</label>
+              <select id="formatType" class="select">
+                <option value="v2ray">V2Ray Links</option>
+                <option value="clash">Clash (YAML)</option>
+                <option value="nekobox">NekoBox JSON</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Line 2 -->
+          <div class="grid sm:grid-cols-3 gap-4">
+            <div class="sm:col-span-2">
+              <label class="block text-white/70 text-sm mb-2" for="uuid">UUID / Password</label>
+              <input id="uuid" type="text" class="field" placeholder="8febb7c9-a664-4b16-bbc5-563b099a4860" />
+            </div>
+            <div class="flex sm:items-end">
+              <button id="generateUuid" type="button" class="btn-ghost w-full sm:w-auto mt-6 sm:mt-0">
+                <i class="fa-solid fa-shuffle"></i> Generate
+              </button>
+            </div>
+          </div>
+
+          <!-- Line 3 -->
+          <div class="grid sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-white/70 text-sm mb-2" for="bugType">Bug Type</label>
+              <select id="bugType" class="select">
+                <option value="default">Default (pakai domain utama)</option>
+                <option value="non-wildcard">Custom (non-wildcard)</option>
+                <option value="wildcard">Custom (wildcard)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-white/70 text-sm mb-2" for="mainDomain">Server Domain</label>
+              <select id="mainDomain" class="select">
+                <!-- akan diisi otomatis dari CONFIG.mainDomains -->
+              </select>
+            </div>
+            <div>
+              <label class="block text-white/70 text-sm mb-2" for="tls">TLS</label>
+              <select id="tls" class="select">
+                <option value="true">TLS</option>
+                <option value="false">Tanpa TLS</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Custom bug -->
+          <div id="customBugContainer" class="hidden">
+            <label class="block text-white/70 text-sm mb-2" for="customBug">Custom Bug (pisahkan dengan koma untuk banyak domain)</label>
+            <input id="customBug" type="text" class="field" placeholder="contoh: cdn.example.com, img.example.com"/>
+            <p class="text-white/40 text-xs mt-2">
+              • Mode <b>non-wildcard</b> → Host/SNI tetap domain utama, Header Host = custom bug<br/>
+              • Mode <b>wildcard</b> → Host/SNI &amp; Header Host memakai <i>bug.mainDomain</i>
+            </p>
+          </div>
+
+          <!-- Line 4 -->
+          <div class="grid sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-white/70 text-sm mb-2" for="country">Country</label>
+              <select id="country" class="select">
+                <option value="">All Countries</option>
+                <!-- akan diisi otomatis dari daftar proxy -->
+              </select>
+            </div>
+            <div>
+              <label class="block text-white/70 text-sm mb-2" for="limit">Proxy Count</label>
+              <input id="limit" class="field" type="number" min="1" max="50" value="5"/>
+            </div>
+            <div class="flex items-end">
+              <label class="flex items-center gap-3 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+                <input id="validateProxies" type="checkbox" class="size-4 accent-emerald-400"/>
+                <span class="text-sm text-white/80">Validate proxies (latency check)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Error -->
+          <div id="error-message" class="hidden text-rose-300 bg-rose-500/10 border border-rose-400/20 rounded-xl px-4 py-3 text-sm"></div>
+
+          <!-- Actions -->
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button type="submit" class="btn-primary w-full">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Generate
+            </button>
+            <button type="reset" class="btn-ghost w-full"
+                    onclick="document.getElementById('error-message').style.display='none'">
+              <i class="fa-solid fa-rotate"></i> Reset
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right: Status + Result -->
+      <section class="space-y-6">
+        <!-- Loading -->
+        <div id="loading" class="glass rounded-2xl p-6 hidden">
+          <div class="flex items-center gap-4">
+            <div class="ring" aria-hidden="true"></div>
+            <div>
+              <p class="loading-text text-white/90 font-semibold">Loading…</p>
+              <p class="text-white/50 text-sm">Please wait while we fetch proxies and build your config.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Validation status -->
+        <div id="validation-status" class="glass rounded-2xl p-6 hidden">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-white font-semibold">Validating proxies</h3>
+            <span class="badge"><i class="fa-solid fa-stopwatch"></i> <span id="validation-count">0/0</span></span>
+          </div>
+          <div class="progress"><span id="validation-bar"></span></div>
+          <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
+            <div class="glass rounded-xl p-3">
+              <div class="text-emerald-300 font-semibold" id="valid-count">0</div>
+              <div class="text-white/60">Valid</div>
+            </div>
+            <div class="glass rounded-xl p-3">
+              <div class="text-rose-300 font-semibold" id="invalid-count">0</div>
+              <div class="text-white/60">Invalid</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Result -->
+        <div id="result" class="glass rounded-2xl p-6 hidden">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-white font-semibold">Your Output</h3>
+            <button id="copyLink" class="btn-primary text-sm">
+              <svg class="copy-icon size-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+                   viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              COPY CONFIGURATION
+            </button>
+          </div>
+          <textarea id="output" class="code" readonly placeholder="Generated links / config will appear here…"></textarea>
+        </div>
+
+        <!-- Tips -->
+        <div class="glass rounded-2xl p-6">
+          <h3 class="text-white font-semibold mb-2">Tips</h3>
+          <ul class="space-y-1.5 text-sm text-white/70 list-disc list-inside">
+            <li>“Bug Type = wildcard” akan memakai format <code>bug.mainDomain</code> untuk Host dan SNI.</li>
+            <li>Aktifkan “Validate proxies” bila ingin menyaring proxy yang mati sebelum dibuatkan link.</li>
+            <li>Output Clash dan NekoBox cocok untuk impor langsung ke aplikasi.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- IMPORTANT: load your JS file AFTER the DOM -->
+  <!-- Ganti path di bawah dengan lokasi file JS yang kamu kirim (yang ada CONST CONFIG & fungsi2) -->
+  <script src="link.js" defer></script>
 </body>
 </html>
