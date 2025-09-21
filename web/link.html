@@ -8,29 +8,18 @@
   />
   <title>AFRCloud-NET || Link Generator</title>
 
-  <!-- Seed dari server -->
-  <script>
-    // Bisa diisi dari server; akan di-merge dengan DEFAULT_SERVER_DOMAINS di bawah
-    window.SERVER_DOMAINS = ["sirtu.oranglemah.my.id"];
-  </script>
-
-  <!-- Favicon -->
   <link rel="icon" href="https://raw.githubusercontent.com/AFRcloud/BG/main/icons8-film-noir-80.png" />
 
-  <!-- Meta tags -->
   <meta property="og:image:secure_url" content="https://raw.githubusercontent.com/akulelaki696/bg/refs/heads/main/20250106_010158.jpg" />
   <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
   <meta name="theme-color" content="#f8f9fa" media="(prefers-color-scheme: light)" />
 
-  <!-- External CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
-  <!-- Custom CSS -->
   <link rel="stylesheet" href="css/common.css"/>
   <link rel="stylesheet" href="css/link.css"/>
 
@@ -146,7 +135,6 @@
       </div>
 
       <div class="p-4">
-        <!-- Proxy List Section -->
         <div id="proxy-list-section">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5">
             <div class="flex items-center mb-3 sm:mb-0">
@@ -181,7 +169,6 @@
             <p class="text-indigo-300 text-sm">Loading proxy list...</p>
           </div>
 
-          <!-- Search input -->
           <div class="mb-4">
             <div class="relative">
               <input
@@ -196,13 +183,10 @@
             </div>
           </div>
 
-          <!-- Mobile-friendly proxy list -->
           <div id="proxy-list-container" class="mt-4"></div>
 
-          <!-- Pagination controls -->
           <div id="pagination-container" class="flex justify-center items-center mt-6 space-x-2"></div>
 
-          <!-- Proxy count info -->
           <div id="proxy-count-info" class="text-center mt-3 text-sm text-gray-400"></div>
 
           <div id="no-proxies-message" class="text-center py-10 hidden">
@@ -211,7 +195,6 @@
           </div>
         </div>
 
-        <!-- Account Creation Section -->
         <div id="account-creation-section" class="mt-6 hidden">
           <div class="pt-4">
             <div class="divider mb-6"></div>
@@ -315,7 +298,6 @@
               </div>
             </div>
 
-            <!-- Tabs -->
             <div class="flex border-b border-gray-700 mb-6 overflow-x-auto space-x-1 sm:space-x-0">
               <button class="tab-btn active py-3 px-4 font-medium text-sm focus:outline-none" data-target="vless-form">
                 <i class="fas fa-bolt mr-2"></i>VLESS
@@ -331,7 +313,6 @@
               </button>
             </div>
 
-            <!-- VMess Form -->
             <div id="vmess-form" class="protocol-form hidden">
               <form id="vmess-account-form" class="space-y-5">
                 <div>
@@ -390,7 +371,6 @@
               </form>
             </div>
 
-            <!-- VLESS Form -->
             <div id="vless-form" class="protocol-form">
               <form id="vless-account-form" class="space-y-5">
                 <div>
@@ -448,7 +428,6 @@
               </form>
             </div>
 
-            <!-- Trojan Form -->
             <div id="trojan-form" class="protocol-form hidden">
               <form id="trojan-account-form" class="space-y-5">
                 <div>
@@ -506,7 +485,6 @@
               </form>
             </div>
 
-            <!-- Shadowsocks Form -->
             <div id="ss-form" class="protocol-form hidden">
               <form id="ss-account-form" class="space-y-5">
                 <div>
@@ -566,7 +544,6 @@
           </div>
         </div>
 
-        <!-- Result Section -->
         <div id="result-section" class="mt-6 hidden">
           <div class="pt-4">
             <div class="divider mb-6"></div>
@@ -645,7 +622,6 @@
     <i class="fas fa-hand-holding-heart"></i>
   </div>
 
-  <!-- Donation Modal -->
   <div id="donation-modal" class="donation-modal">
     <div class="donation-backdrop" id="donation-backdrop"></div>
     <div class="donation-content" id="donation-content">
@@ -665,25 +641,9 @@
     </div>
   </div>
 
-  <!-- External JavaScript -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" defer></script>
-
-  <!-- Merge default server domains + yang dari window.SERVER_DOMAINS -->
-  <script>
-    (function(){
-      const DEFAULT_SERVER_DOMAINS = [
-        "sirtu.oranglemah.my.id",
-        "dia.oranglemah.web.id"
-      ];
-      const incoming = Array.isArray(window.SERVER_DOMAINS) ? window.SERVER_DOMAINS : [];
-      window.SERVER_DOMAINS = Array.from(new Set([...DEFAULT_SERVER_DOMAINS, ...incoming]));
-      // Sekadar log:
-      console.log("SERVER_DOMAINS =", window.SERVER_DOMAINS);
-    })();
-  </script>
-
-  <!-- Custom JavaScript (cache-busted + defer) -->
+  
   <script src="js/common.js?v=2" defer></script>
   <script src="js/link.js?v=5" defer></script>
 </body>
