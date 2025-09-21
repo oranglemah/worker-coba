@@ -1,3 +1,4 @@
+console.log("serverDomains =", serverDomains)
 /**
  * JavaScript for the link generator page
  */
