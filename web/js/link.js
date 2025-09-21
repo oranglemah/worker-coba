@@ -161,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
   serverDomainSelects.forEach((select) => {
     if (select) {
       // Clear existing options
-      select.innerHTML = "sirtu.oranglemah.my.id"
+      select.innerHTML = ""
 
       // Add options for each domain
       serverDomains.forEach((domain) => {
@@ -170,10 +170,15 @@ document.addEventListener("DOMContentLoaded", () => {
         option.textContent = domain
         select.appendChild(option)
       })
+    if (serverDomains.length > 0) {
+      select.value = serverDomains[0]   // pilih domain pertama
+      selectedServerDomain = serverDomains[0]
+      }
 
       // Add event listener to update selected domain
       select.addEventListener("change", function () {
         selectedServerDomain = this.value
+    
       })
     }
   })
