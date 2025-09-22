@@ -1,4 +1,4 @@
-name = "sirtu"
+name = "sak"
 account_id = "ae684acc5926e121339ca190d2cdf0e5"
 main = "build/worker/shim.mjs"
 compatibility_date = "2024-05-23"
