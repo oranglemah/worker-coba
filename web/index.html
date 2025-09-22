@@ -18,22 +18,34 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
   <style>
-    /* ========= THEME (override variabel dari common.css bila ada) ========= */
+    /* ========= THEME (selaras gambar) =========
+       Ubah --theme-hue untuk nuansa: 200=cyan, 210=biru, 260=ungu, 30=amber */
     :root{
-      --primary-color: #7c3aed;     /* violet-600 */
-      --secondary-color:#06b6d4;    /* cyan-500  */
-      --accent-color:   #f59e0b;    /* amber-500 */
-      --surface: rgba(17,18,40,0.72);
-      --surface-2: rgba(13,14,30,0.58);
-      --text-primary:#f8fafc;       /* nyaris putih */
-      --text-secondary:#cbd5e1;     /* slate-300 */
+      --theme-hue: 210;
+
+      /* Palet turunannya */
+      --primary-color: hsl(var(--theme-hue) 85% 58%);     /* aksen utama */
+      --secondary-color: hsl(calc(var(--theme-hue) - 20) 80% 52%);
+      --accent-color:   hsl(30 95% 52%);
+
+      /* Teks disesuaikan agar kontras di atas foto */
+      --text-primary:#f8fafc;
+      --text-secondary:#cbd5e1;
+
+      /* Permukaan kaca */
+      --surface: rgba(8,12,26,0.66);
+      --surface-2: rgba(6,10,22,0.56);
+
       --ok:#22c55e;
       --danger:#ef4444;
-      --ring: rgba(124,58,237,0.35);
-      --glow-primary: 0 8px 28px rgba(124,58,237,0.35);
-      --glow-secondary: 0 8px 28px rgba(6,182,212,0.28);
+      --ring: color-mix(in oklab, var(--primary-color) 35%, transparent);
+      --glow-primary: 0 8px 28px color-mix(in oklab, var(--primary-color) 35%, transparent);
+      --glow-secondary: 0 8px 28px color-mix(in oklab, var(--secondary-color) 28%, transparent);
       --glass-blur: blur(14px);
       --radius: 16px;
+
+      /* URL gambar background */
+      --bg-url: url("https://drive.google.com/uc?export=view&id=148uquh_umtfeBfNHe6vhGdwptjzI18Z0");
     }
 
     /* ========= GLOBAL ========= */
@@ -44,10 +56,16 @@
       color:var(--text-primary);
       min-height:100vh;
       display:flex; flex-direction:column; align-items:center;
-      background: radial-gradient(1200px 700px at 10% -10%, #0ea5e9 0%, rgba(14,165,233,0) 60%),
-                  radial-gradient(1000px 600px at 110% 10%, #a855f7 0%, rgba(168,85,247,0) 65%),
-                  linear-gradient(135deg,#0b1020 0%, #161a35 60%, #0f142a 100%);
-      background-attachment: fixed;
+
+      /* Foto + overlay gradient untuk keterbacaan (gradient diletakkan lebih dulu agar jadi overlay). 
+         Layering: gradient atas, lalu gambar. MDN: background-image layering. */
+      background-image:
+        linear-gradient(180deg, rgba(2,8,23,.70) 0%, rgba(2,8,23,.62) 45%, rgba(2,8,23,.58) 100%),
+        var(--bg-url);
+      background-size: cover, cover;
+      background-position: center center, center center;
+      background-repeat: no-repeat, no-repeat;
+      background-attachment: fixed, fixed; /* disable di mobile di media query di bawah */
       overflow-x:hidden;
       padding: 1rem 0;
     }
@@ -62,10 +80,10 @@
       padding:1.6rem 1.35rem 1.4rem;
       background:linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
       -webkit-backdrop-filter: var(--glass-blur);
-      backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur); /* dukungan tergantung browser, lihat caniuse */
       border:1px solid rgba(148,163,184,.18);
       box-shadow:
-        0 0 0 1px rgba(124,58,237,.08) inset,
+        0 0 0 1px color-mix(in oklab, var(--primary-color) 8%, transparent) inset,
         0 18px 50px -12px rgba(2,6,23,.8);
       overflow:hidden;
       isolation:isolate;
@@ -75,7 +93,11 @@
       position:absolute; inset:-1px;
       border-radius:calc(var(--radius) + 1px);
       background:
-        conic-gradient(from 180deg at 50% 50%, rgba(124,58,237,.35), rgba(6,182,212,.35), rgba(245,158,11,.25), rgba(124,58,237,.35));
+        conic-gradient(from 180deg at 50% 50%,
+          color-mix(in oklab, var(--primary-color) 35%, transparent),
+          color-mix(in oklab, var(--secondary-color) 35%, transparent),
+          color-mix(in oklab, var(--accent-color) 25%, transparent),
+          color-mix(in oklab, var(--primary-color) 35%, transparent));
       filter: blur(18px);
       opacity:.22;
       z-index:-1;
@@ -84,31 +106,32 @@
       content:"";
       position:absolute; inset:0;
       border-radius:inherit;
-      background: linear-gradient(90deg, rgba(124,58,237,.25), rgba(6,182,212,.25), rgba(245,158,11,.2));
+      background: linear-gradient(90deg,
+        color-mix(in oklab, var(--primary-color) 25%, transparent),
+        color-mix(in oklab, var(--secondary-color) 25%, transparent),
+        color-mix(in oklab, var(--accent-color) 20%, transparent));
       height:3px;
       transform: translateY(-1px);
-      box-shadow: 0 0 18px rgba(124,58,237,.35);
+      box-shadow: 0 0 18px color-mix(in oklab, var(--primary-color) 35%, transparent);
     }
 
     /* ========= HEADER / BRAND ========= */
     .title-container{ text-align:center; margin: .25rem 0 1.2rem; }
-    .brand-row{
-      display:flex; align-items:center; justify-content:center; gap:.6rem; margin-bottom:.5rem;
-    }
+    .brand-row{ display:flex; align-items:center; justify-content:center; gap:.6rem; margin-bottom:.5rem; }
     .brand-pill{
       font-family:"Orbitron",sans-serif;
       font-weight:800; letter-spacing:1px;
       font-size:.85rem; line-height:1;
-      padding:.45rem .7rem;
-      border-radius:999px;
+      padding:.45rem .7rem; border-radius:999px;
       background:
         linear-gradient(180deg, rgba(2,8,23,.8), rgba(2,8,23,.35)) padding-box,
-        linear-gradient(90deg, rgba(124,58,237,.65), rgba(6,182,212,.65)) border-box;
+        linear-gradient(90deg,
+          color-mix(in oklab, var(--primary-color) 65%, transparent),
+          color-mix(in oklab, var(--secondary-color) 65%, transparent)) border-box;
       border:1px solid transparent;
-      box-shadow: 0 6px 18px rgba(6,182,212,.20);
+      box-shadow: 0 6px 18px color-mix(in oklab, var(--secondary-color) 20%, transparent);
       color:var(--text-primary);
       text-shadow:0 1px 0 rgba(2,6,23,.35);
-      /* label ORANG_LEMAH */
     }
     .brand-pill .dot{
       width:.5rem; height:.5rem; border-radius:50%;
@@ -120,38 +143,29 @@
     .title{
       margin:.25rem 0 0 0;
       font-family:"Orbitron",sans-serif;
-      font-weight:800;
-      font-size:1.85rem;
-      letter-spacing:.5px;
-      background:linear-gradient(90deg,#e2e8f0 0%, #c7d2fe 40%, #a5f3fc 80%);
+      font-weight:800; font-size:1.85rem; letter-spacing:.5px;
+      background:linear-gradient(90deg,#e2e8f0 0%, color-mix(in oklab, #e2e8f0 60%, var(--primary-color)) 40%, color-mix(in oklab, #e2e8f0 60%, var(--secondary-color)) 80%);
       -webkit-background-clip:text; background-clip:text;
       -webkit-text-fill-color:transparent;
-      text-shadow:0 2px 20px rgba(99,102,241,.18);
+      text-shadow:0 2px 20px color-mix(in oklab, var(--primary-color) 18%, transparent);
     }
     .title-badge{
-      display:inline-block;
-      margin-left:.5rem;
-      font-size:.68rem; font-weight:700;
-      padding:.22rem .45rem;
-      border-radius:.35rem;
+      display:inline-block; margin-left:.5rem;
+      font-size:.68rem; font-weight:700; padding:.22rem .45rem; border-radius:.35rem;
       color:#0b1020;
-      background:linear-gradient(90deg,#a78bfa,#22d3ee);
-      box-shadow:0 6px 14px rgba(34,211,238,.25);
-      vertical-align: top;
-      transform: translateY(-4px) rotate(5deg);
+      background:linear-gradient(90deg, color-mix(in oklab, var(--primary-color) 65%, white), color-mix(in oklab, var(--secondary-color) 65%, white));
+      box-shadow:0 6px 14px color-mix(in oklab, var(--secondary-color) 25%, transparent);
+      vertical-align: top; transform: translateY(-4px) rotate(5deg);
     }
-    .subtitle{
-      font-size:.95rem; margin-top:.35rem;
-      color:var(--text-secondary);
-    }
+    .subtitle{ font-size:.95rem; margin-top:.35rem; color:var(--text-secondary) }
 
     /* ========= PROFILE & STATUS ========= */
     .profile-container{ display:flex; flex-direction:column; align-items:center; margin:1.2rem 0 1.8rem }
     .profile-img{
       width:120px; height:120px; border-radius:50%; object-fit:cover; margin-bottom:.9rem;
-      background:linear-gradient(145deg, rgba(124,58,237,.85), rgba(6,182,212,.85)) padding-box;
+      background:linear-gradient(145deg, color-mix(in oklab, var(--primary-color) 85%, transparent), color-mix(in oklab, var(--secondary-color) 85%, transparent)) padding-box;
       border:3px solid transparent;
-      box-shadow: 0 10px 28px rgba(124,58,237,.35), 0 3px 0 rgba(2,6,23,.9) inset;
+      box-shadow: 0 10px 28px color-mix(in oklab, var(--primary-color) 35%, transparent), 0 3px 0 rgba(2,6,23,.9) inset;
     }
     .status-badge{
       background:linear-gradient(90deg, #16a34a, #22c55e);
@@ -170,10 +184,9 @@
       width:52px; height:52px; border-radius:14px;
       display:flex; align-items:center; justify-content:center;
       font-size:1.35rem; color:#e5e7eb;
-      background:
-        linear-gradient(180deg, rgba(30,41,59,.75), rgba(12,18,36,.8));
+      background: linear-gradient(180deg, rgba(30,41,59,.75), rgba(12,18,36,.8));
       border:1px solid rgba(148,163,184,.2);
-      box-shadow: 0 6px 18px rgba(2,6,23,.7), 0 0 0 4px rgba(124,58,237,.12);
+      box-shadow: 0 6px 18px rgba(2,6,23,.7), 0 0 0 4px color-mix(in oklab, var(--primary-color) 12%, transparent);
       transition: transform .2s ease, box-shadow .2s ease;
     }
     .protocol-icon:hover{ transform: translateY(-2px); box-shadow: var(--glow-secondary) }
@@ -186,9 +199,10 @@
       border:none; border-radius:12px; cursor:pointer; text-decoration:none;
       font-family:"Orbitron",sans-serif; font-weight:700; letter-spacing:.6px;
       color:#0b1020; display:flex; align-items:center; justify-content:center; gap:.6rem;
-      background:
-        linear-gradient(180deg, #a78bfa 0%, #7dd3fc 100%);
-      box-shadow: 0 12px 24px -10px rgba(125,211,252,.45),
+      background: linear-gradient(180deg,
+        color-mix(in oklab, var(--primary-color) 70%, white) 0%,
+        color-mix(in oklab, var(--secondary-color) 70%, white) 100%);
+      box-shadow: 0 12px 24px -10px color-mix(in oklab, var(--secondary-color) 45%, transparent),
                   0 1px 0 rgba(255,255,255,.25) inset;
       position:relative; overflow:hidden; transition: transform .15s ease;
     }
@@ -216,14 +230,18 @@
       border:1px solid rgba(148,163,184,.18);
       box-shadow:0 18px 50px -12px rgba(2,6,23,.8);
       display:flex; flex-direction:column; align-items:center; text-align:center; overflow:hidden;
+      color:var(--text-primary);
     }
     .footer::before{
       content:""; position:absolute; top:0; left:0; width:100%; height:3px;
-      background:linear-gradient(90deg, rgba(124,58,237,.5), rgba(6,182,212,.45), rgba(245,158,11,.4));
+      background:linear-gradient(90deg,
+        color-mix(in oklab, var(--primary-color) 50%, transparent),
+        color-mix(in oklab, var(--secondary-color) 45%, transparent),
+        color-mix(in oklab, var(--accent-color) 40%, transparent));
     }
     .footer-logo{
       font-family:"Orbitron",sans-serif; font-weight:800; font-size:1.05rem; margin-bottom:.35rem;
-      background:linear-gradient(90deg,#e2e8f0,#c7d2fe,#a5f3fc);
+      background:linear-gradient(90deg,#e2e8f0,color-mix(in oklab, #e2e8f0 60%, var(--primary-color)),color-mix(in oklab, #e2e8f0 60%, var(--secondary-color)));
       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
     }
     .footer-powered{ font-size:.8rem; color:var(--text-secondary); margin-bottom:.6rem; font-family:"Share Tech Mono",monospace }
@@ -241,12 +259,12 @@
     .footer-year{ font-family:"Orbitron",sans-serif; font-weight:700; font-size:.8rem; color:#c7d2fe; margin-top:.35rem; letter-spacing:1px }
 
     /* ========= CIRCUIT LINES ========= */
-    .circuit-line{ position:absolute; background:#7c3aed22 }
+    .circuit-line{ position:absolute; background:color-mix(in oklab, var(--primary-color) 13%, transparent) }
     .circuit-line-1{ width:60px; height:1px; top:20px; left:20px }
     .circuit-line-2{ width:1px; height:30px; top:20px; left:20px }
     .circuit-line-3{ width:40px; height:1px; bottom:25px; right:30px }
     .circuit-line-4{ width:1px; height:25px; bottom:25px; right:30px }
-    .circuit-dot{ position:absolute; width:3px; height:3px; border-radius:50%; background:#7c3aed55 }
+    .circuit-dot{ position:absolute; width:3px; height:3px; border-radius:50%; background:color-mix(in oklab, var(--primary-color) 33%, transparent) }
     .circuit-dot-1{ top:20px; left:20px } .circuit-dot-2{ top:50px; left:20px }
     .circuit-dot-3{ bottom:25px; right:30px } .circuit-dot-4{ bottom:50px; right:30px }
 
@@ -259,14 +277,21 @@
       .protocol-icon{ width:44px; height:44px; font-size:1.1rem; border-radius:12px }
       .protocol-name{ font-size:.82rem }
       .action-btn{ font-size:.95rem; padding:.75rem .9rem }
+
+      /* Fixed background kadang bermasalah di mobile;
+         fallback ke scroll agar stabil. */
+      body{
+        background-attachment: scroll, scroll;
+      }
     }
 
-    /* ========= REDUCE MOTION (aksesibilitas) ========= */
+    /* ========= REDUCE MOTION ========= */
     @media (prefers-reduced-motion: reduce){
       .status-badge i, .action-btn::before { animation:none; transition:none }
       .action-btn:hover{ transform:none }
       .protocol-icon{ transition:none }
-      body{ background-attachment: scroll } /* kurangin parallax/scroll-attach */
+      /* pada mode reduce motion, hilangkan efek parallax */
+      body{ background-attachment: scroll, scroll }
     }
   </style>
 </head>
@@ -369,7 +394,7 @@
     <div class="footer-year">© <span id="current-year"></span></div>
   </footer>
 
-  <!-- DONATE BUTTON & MODAL (ID/kelas dibiarkan sama agar JS tetap jalan) -->
+  <!-- DONATE BUTTON & MODAL (tetap, tidak diubah) -->
   <div id="donation-button" class="donate-btn">
     <i class="fas fa-hand-holding-heart"></i>
   </div>
@@ -397,7 +422,6 @@
   <script src="js/common.js"></script>
   <script src="js/index.js"></script>
   <script>
-    // tahun footer
     document.getElementById("current-year").textContent = new Date().getFullYear();
   </script>
 </body>
