@@ -698,7 +698,7 @@ function renderProxyList() {
 
 // Function to check proxy status in the list
 function checkProxyStatusInList(proxy, statusBadge) {
-  const statusURL = `https://api.jb8fd7grgd.workers.dev/ ${proxy.ip}:${proxy.port}`;
+  const statusURL = `https://api.jb8fd7grgd.workers.dev/${proxy.ip}:${proxy.port}`;
 
   fetch(statusURL)
     .then((response) => response.json())
@@ -874,7 +874,7 @@ async function selectProxy(index) {
 // Function to check proxy status in the account creation section
 function checkProxyStatus(proxy) {
   const startTime = performance.now();
-  const statusURL = `https://api.jb8fd7grgd.workers.dev/ ${proxy.ip}:${proxy.port}`;
+  const statusURL = `https://api.jb8fd7grgd.workers.dev/${proxy.ip}:${proxy.port}`;
   const statusContainer = document.getElementById("proxy-status-container");
   const statusLoading = document.getElementById("proxy-status-loading");
   const statusActive = document.getElementById("proxy-status-active");
@@ -939,13 +939,13 @@ function loadProxyList(url) {
       return await response.text();
     },
     async () => {
-      const corsUrl = `https://cors-anywhere.herokuapp.com/ ${url}`;
+      const corsUrl = `https://cors-anywhere.herokuapp.com/${url}`;
       const response = await fetch(corsUrl);
       if (!response.ok) throw new Error("CORS Anywhere proxy failed");
       return await response.text();
     },
     async () => {
-      const corsUrl = `https://api.allorigins.win/get?url= ${encodeURIComponent(url)}`;
+      const corsUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
       const response = await fetch(corsUrl);
       if (!response.ok) throw new Error("AllOrigins proxy failed");
       const data = await response.json();
