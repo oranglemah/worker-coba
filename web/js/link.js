@@ -952,7 +952,7 @@ function loadProxyList(url) {
       return data.contents;
     },
     async () => {
-      const corsUrl = `https://cors.sh/ ${url}`;
+      const corsUrl = `https://cors.sh/${url}`;
       const response = await fetch(corsUrl, {
         headers: { "x-cors-api-key": "temp_" + Math.random().toString(36).substring(2, 12) },
       });
