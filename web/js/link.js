@@ -10,7 +10,7 @@ let proxyList = [];
 let filteredProxyList = [];
 let selectedProxy = null;
 const defaultProxyUrl =
-  "https://raw.githubusercontent.com/AFRcloud/ProxyList/refs/heads/main/ProxyList.txt ";
+  "https://raw.githubusercontent.com/AFRcloud/ProxyList/refs/heads/main/ProxyList.txt";
 
 // === Server domains (merge + dedupe) ===
 const DEFAULT_SERVER_DOMAINS = [
@@ -655,7 +655,7 @@ function renderProxyList() {
 
     proxyListContainer.appendChild(card);
 
-    const statusURL = `https://api.jb8fd7grgd.workers.dev/ ${proxy.ip}:${proxy.port}`;
+    const statusURL = `https://api.jb8fd7grgd.workers.dev/${proxy.ip}:${proxy.port}`;
 
     fetch(statusURL)
       .then((response) => response.json())
