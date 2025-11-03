@@ -95,7 +95,7 @@ function setupEventListeners() {
 }
 function loadProxyList() {
   showLoading("Fetching proxy list...");
-  fetch("https://raw.githubusercontent.com/AFRcloud/ProxyList/refs/heads/main/ProxyList.txt").then(_0x4494de => {
+  fetch("https://raw.githubusercontent.com/FoolVPN-ID/Nautica/refs/heads/main/proxyList.txt").then(_0x4494de => {
     if (!_0x4494de.ok) {
       throw new Error("Failed to fetch proxy list");
     }
