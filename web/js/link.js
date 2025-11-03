@@ -10,7 +10,7 @@ let proxyList = [];
 let filteredProxyList = [];
 let selectedProxy = null;
 const defaultProxyUrl =
-  "https://raw.githubusercontent.com/AFRcloud/ProxyList/refs/heads/main/ProxyList.txt";
+  "https://raw.githubusercontent.com/FoolVPN-ID/Nautica/refs/heads/main/proxyList.txt";
 
 // === Server domains (merge + dedupe) ===
 const DEFAULT_SERVER_DOMAINS = [
