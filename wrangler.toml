@@ -12,14 +12,12 @@ workers_dev = true
 binding = "sirtu"
 id = "ad74514dc50d44f1a565f48fbe91c6e2"
 
-# ===== Rust custom build (butuh Cargo di CI/runner) =====
-[build]
-command = "cargo install -q worker-build && worker-build --release"
+# ❌ HAPUS BAGIAN [build] DAN build DI env.dev
+# Tidak perlu Cargo/Rust karena worker berupa JS bundling
 
 # ===== DEV (untuk testing di workers.dev) =====
 [env.dev]
 workers_dev = true
-build = { command = "cargo install -q worker-build && worker-build --dev" }
 
 # ===== PRODUCTION (aktifkan semua custom domain di sini) =====
 [env.production]
@@ -31,7 +29,6 @@ routes = [
   { pattern = "df.game.naver.com.sirtu.oranglemah.my.id", custom_domain = true },
   { pattern = "zoomgov.com.sirtu.oranglemah.my.id", custom_domain = true }
 ]
-
 
 [vars]
 UUID = "8febb7c9-a664-4b16-bbc5-563b099a4860"
