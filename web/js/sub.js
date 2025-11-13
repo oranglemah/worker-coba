@@ -557,27 +557,3 @@ function shuffleArray(_0xd9add7) {
   }
   return _0xd9add7;
 }
-export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-
-    // === endpoint baru untuk proxyList ===
-    if (url.pathname === "/proxy-list") {
-      const upstream = "https://raw.githubusercontent.com/FoolVPN-ID/Nautica/refs/heads/main/proxyList.txt";
-
-      const resp = await fetch(upstream);
-
-      // forward status + body, tapi paksa content-type text/plain
-      return new Response(await resp.text(), {
-        status: resp.status,
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "no-store"
-        }
-      });
-    }
-
-    // ...kode worker kamu yang lain di bawah sini...
-  }
-}
-
